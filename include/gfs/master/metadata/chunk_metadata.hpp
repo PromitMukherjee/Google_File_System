@@ -17,6 +17,11 @@ public:
         ChunkHandle handle,
         ChunkVersion version = 1);
 
+    ChunkHandle handle = 0;
+    ChunkVersion version = 1;
+    std::uint64_t size = 0;
+    std::unordered_set<ServerId> replicas;
+
     ChunkHandle GetHandle() const noexcept;
 
     ChunkVersion GetVersion() const noexcept;
@@ -37,13 +42,6 @@ public:
     std::size_t ReplicaCount() const noexcept;
 
     void ClearReplicas() noexcept;
-
-private:
-    ChunkHandle handle_ = 0;
-    ChunkVersion version_ = 1;
-    std::uint64_t size_ = 0;
-
-    std::unordered_set<ServerId> replica_server_ids_;
 };
 
 }  // namespace gfs::master::metadata

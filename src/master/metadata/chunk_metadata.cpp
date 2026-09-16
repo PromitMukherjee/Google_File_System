@@ -5,66 +5,75 @@
 namespace gfs::master::metadata {
 
 ChunkMetadata::ChunkMetadata(
-    ChunkHandle handle,
-    ChunkVersion version)
-    : handle_(handle),
-      version_(version) {
+    ChunkHandle chunk_handle,
+    ChunkVersion chunk_version)
+    : handle(chunk_handle),
+      version(chunk_version) {
 }
 
 ChunkHandle ChunkMetadata::GetHandle() const noexcept {
-    return handle_;
+    return handle;
 }
 
 ChunkVersion ChunkMetadata::GetVersion() const noexcept {
-    return version_;
+    return version;
 }
 
-void ChunkMetadata::SetVersion(ChunkVersion version) noexcept {
-    if (version != 0) {
-        version_ = version;
+void ChunkMetadata::SetVersion(
+    ChunkVersion chunk_version) noexcept {
+    if (chunk_version != 0) {
+        version = chunk_version;
     }
 }
 
 std::uint64_t ChunkMetadata::GetSize() const noexcept {
-    return size_;
+    return size;
 }
 
-void ChunkMetadata::SetSize(std::uint64_t size) noexcept {
-    size_ = size;
+void ChunkMetadata::SetSize(
+    std::uint64_t value) noexcept {
+    size = value;
 }
 
-bool ChunkMetadata::AddReplica(ServerId server_id) {
-    return replica_server_ids_.insert(server_id).second;
+bool ChunkMetadata::AddReplica(
+    ServerId server_id) {
+    return replicas.insert(server_id).second;
 }
 
-bool ChunkMetadata::RemoveReplica(ServerId server_id) {
-    return replica_server_ids_.erase(server_id) != 0;
+bool ChunkMetadata::RemoveReplica(
+    ServerId server_id) {
+    return replicas.erase(server_id) != 0;
 }
 
-bool ChunkMetadata::HasReplica(ServerId server_id) const {
-    return replica_server_ids_.contains(server_id);
+bool ChunkMetadata::HasReplica(
+    ServerId server_id) const {
+    return replicas.contains(server_id);
 }
 
 const std::unordered_set<ServerId>&
 ChunkMetadata::GetReplicas() const noexcept {
-    return replica_server_ids_;
-}
-
-std::vector<ServerId> ChunkMetadata::GetReplicaServerIds() const {
-    std::vector<ServerId> replicas(
-        replica_server_ids_.begin(),
-        replica_server_ids_.end());
-
-    std::sort(replicas.begin(), replicas.end());
     return replicas;
 }
 
+std::vector<ServerId>
+ChunkMetadata::GetReplicaServerIds() const {
+    std::vector<ServerId> replica_ids(
+        replicas.begin(),
+        replicas.end());
+
+    std::sort(
+        replica_ids.begin(),
+        replica_ids.end());
+
+    return replica_ids;
+}
+
 std::size_t ChunkMetadata::ReplicaCount() const noexcept {
-    return replica_server_ids_.size();
+    return replicas.size();
 }
 
 void ChunkMetadata::ClearReplicas() noexcept {
-    replica_server_ids_.clear();
+    replicas.clear();
 }
 
 }  // namespace gfs::master::metadata

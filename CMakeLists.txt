@@ -219,6 +219,13 @@ add_library(gfs_core
     src/client/io/writer.cpp
 
     src/client/gfs_client.cpp
+
+    src/master/replication/replica_manager.cpp
+    src/master/replication/placement_policy.cpp
+
+    src/chunkserver/replication/replica_receiver.cpp
+    src/chunkserver/replication/replica_sender.cpp
+    src/chunkserver/replication/clone_manager.cpp
 )
 
 target_include_directories(gfs_core
@@ -303,11 +310,22 @@ target_link_libraries(gfs_client_test
         GTest::gtest_main
 )
 
+add_executable(gfs_replication_test
+    tests/replication_test.cpp
+)
+
+target_link_libraries(gfs_replication_test
+    PRIVATE
+        gfs_core
+        GTest::gtest_main
+)
+
 foreach(TEST_TARGET
         gfs_common_test
         gfs_master_test
         gfs_chunkserver_test
-        gfs_client_test)
+        gfs_client_test
+        gfs_replication_test)
     target_include_directories(${TEST_TARGET}
         PRIVATE
             ${CMAKE_CURRENT_SOURCE_DIR}/include

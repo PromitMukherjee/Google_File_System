@@ -17,6 +17,11 @@ public:
         std::string path,
         std::uint32_t replication_factor = 3);
 
+    std::string path;
+    std::uint64_t size = 0;
+    std::uint32_t replication_factor = 3;
+    std::vector<ChunkHandle> chunk_handles;
+
     const std::string& GetPath() const noexcept;
     void SetPath(std::string path);
 
@@ -34,12 +39,6 @@ public:
     std::size_t ChunkCount() const noexcept;
 
     void ClearChunks() noexcept;
-
-private:
-    std::string path_;
-    std::uint64_t size_ = 0;
-    std::uint32_t replication_factor_ = 3;
-    std::vector<ChunkHandle> chunk_handles_;
 };
 
 }  // namespace gfs::master::metadata

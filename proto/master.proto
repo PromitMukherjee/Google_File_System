@@ -1,0 +1,137 @@
+// proto/master.proto
+syntax = "proto3";
+
+package gfs.protocol;
+
+option cc_enable_arenas = true;
+
+message FileMetadata {
+    string path = 1;
+    uint64 size = 2;
+    uint32 replication_factor = 3;
+    repeated uint64 chunk_handles = 4;
+}
+
+message ChunkMetadata {
+    uint64 chunk_handle = 1;
+    uint64 chunk_index = 2;
+    uint64 version = 3;
+    repeated uint64 replica_server_ids = 4;
+}
+
+message ChunkLocation {
+    uint64 chunk_handle = 1;
+    uint64 version = 2;
+    repeated uint64 replica_server_ids = 3;
+}
+
+message LeaseInfo {
+    uint64 chunk_handle = 1;
+    uint64 primary_server_id = 2;
+    uint64 version = 3;
+    uint64 expiration_time_ms = 4;
+}
+
+message CreateFileRequest {
+    string path = 1;
+    uint32 replication_factor = 2;
+}
+
+message CreateFileResponse {
+    bool success = 1;
+    string error_message = 2;
+}
+
+message DeleteFileRequest {
+    string path = 1;
+}
+
+message DeleteFileResponse {
+    bool success = 1;
+    string error_message = 2;
+}
+
+message RenameFileRequest {
+    string source_path = 1;
+    string destination_path = 2;
+}
+
+message RenameFileResponse {
+    bool success = 1;
+    string error_message = 2;
+}
+
+message GetFileInfoRequest {
+    string path = 1;
+}
+
+message GetFileInfoResponse {
+    bool success = 1;
+    string error_message = 2;
+    FileMetadata metadata = 3;
+}
+
+message GetChunkLocationsRequest {
+    string path = 1;
+    uint64 chunk_index = 2;
+}
+
+message GetChunkLocationsResponse {
+    bool success = 1;
+    string error_message = 2;
+    ChunkLocation location = 3;
+}
+
+message GetLeaseHolderRequest {
+    uint64 chunk_handle = 1;
+}
+
+message GetLeaseHolderResponse {
+    bool success = 1;
+    string error_message = 2;
+    LeaseInfo lease = 3;
+}
+
+message ChunkInfoReport {
+    uint64 chunk_handle = 1;
+    uint64 version = 2;
+}
+
+message HeartbeatRequest {
+    uint64 server_id = 1;
+    uint64 timestamp_ms = 2;
+    repeated ChunkInfoReport chunks = 3;
+}
+
+message HeartbeatInstruction {
+    enum Type {
+        UNKNOWN = 0;
+        DELETE_CHUNK = 1;
+        CREATE_CHUNK = 2;
+        CLONE_CHUNK = 3;
+        REPLICATE_CHUNK = 4;
+        UPDATE_LEASE = 5;
+    }
+
+    Type type = 1;
+    uint64 chunk_handle = 2;
+    uint64 version = 3;
+    uint64 source_server_id = 4;
+}
+
+message HeartbeatResponse {
+    bool success = 1;
+    string error_message = 2;
+    uint64 master_timestamp_ms = 3;
+    repeated HeartbeatInstruction instructions = 4;
+}
+
+service MasterService {
+    rpc CreateFile(CreateFileRequest) returns (CreateFileResponse);
+    rpc DeleteFile(DeleteFileRequest) returns (DeleteFileResponse);
+    rpc RenameFile(RenameFileRequest) returns (RenameFileResponse);
+    rpc GetFileInfo(GetFileInfoRequest) returns (GetFileInfoResponse);
+    rpc GetChunkLocations(GetChunkLocationsRequest) returns (GetChunkLocationsResponse);
+    rpc GetLeaseHolder(GetLeaseHolderRequest) returns (GetLeaseHolderResponse);
+    rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse);
+}

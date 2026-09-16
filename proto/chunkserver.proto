@@ -1,0 +1,131 @@
+syntax = "proto3";
+
+package gfs.protocol;
+
+option cc_enable_arenas = true;
+
+// -----------------------------------------------------------------------------
+// Client -> Chunkserver data operations
+// -----------------------------------------------------------------------------
+
+message ReadChunkRequest {
+    uint64 chunk_handle = 1;
+    uint64 chunk_version = 2;
+    uint64 offset = 3;
+    uint64 length = 4;
+}
+
+message ReadChunkResponse {
+    bool success = 1;
+    string error_message = 2;
+    bytes data = 3;
+}
+
+message PushDataRequest {
+    uint64 chunk_handle = 1;
+    uint64 chunk_version = 2;
+    bytes data = 3;
+}
+
+message PushDataResponse {
+    bool success = 1;
+    string error_message = 2;
+}
+
+message WriteChunkRequest {
+    uint64 chunk_handle = 1;
+    uint64 chunk_version = 2;
+    uint64 offset = 3;
+    bytes data = 4;
+    uint64 mutation_id = 5;
+}
+
+message WriteChunkResponse {
+    bool success = 1;
+    string error_message = 2;
+    uint64 mutation_id = 3;
+}
+
+// -----------------------------------------------------------------------------
+// Chunkserver mutation forwarding
+// -----------------------------------------------------------------------------
+
+message ApplyMutationRequest {
+    uint64 chunk_handle = 1;
+    uint64 chunk_version = 2;
+    uint64 mutation_id = 3;
+    uint64 offset = 4;
+    bytes data = 5;
+}
+
+message ApplyMutationResponse {
+    bool success = 1;
+    string error_message = 2;
+    uint64 mutation_id = 3;
+}
+
+// -----------------------------------------------------------------------------
+// Chunkserver -> Chunkserver replica transfer
+// -----------------------------------------------------------------------------
+
+message TransferChunkRequest {
+    uint64 chunk_handle = 1;
+    uint64 chunk_version = 2;
+    uint64 offset = 3;
+    uint64 length = 4;
+}
+
+message TransferChunkResponse {
+    bool success = 1;
+    string error_message = 2;
+    bytes data = 3;
+}
+
+message CloneChunkRequest {
+    uint64 source_chunk_handle = 1;
+    uint64 source_version = 2;
+    uint64 destination_chunk_handle = 3;
+    uint64 destination_version = 4;
+}
+
+message CloneChunkResponse {
+    bool success = 1;
+    string error_message = 2;
+}
+
+message CreateReplicaRequest {
+    uint64 chunk_handle = 1;
+    uint64 chunk_version = 2;
+}
+
+message CreateReplicaResponse {
+    bool success = 1;
+    string error_message = 2;
+}
+
+// -----------------------------------------------------------------------------
+// Chunkserver service
+// -----------------------------------------------------------------------------
+
+service ChunkserverService {
+    rpc ReadChunk(ReadChunkRequest)
+        returns (ReadChunkResponse);
+
+    rpc PushData(PushDataRequest)
+        returns (PushDataResponse);
+
+    rpc WriteChunk(WriteChunkRequest)
+        returns (WriteChunkResponse);
+
+    rpc ApplyMutation(ApplyMutationRequest)
+        returns (ApplyMutationResponse);
+
+    rpc TransferChunk(TransferChunkRequest)
+        returns (TransferChunkResponse);
+
+    rpc CloneChunk(CloneChunkRequest)
+        returns (CloneChunkResponse);
+
+    rpc CreateReplica(CreateReplicaRequest)
+        returns (CreateReplicaResponse);
+}

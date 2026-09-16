@@ -1,0 +1,113 @@
+syntax = "proto3";
+
+package gfs.protocol;
+
+option cc_enable_arenas = true;
+
+// -----------------------------------------------------------------------------
+// Client operation definitions
+// -----------------------------------------------------------------------------
+
+enum ClientOperationType {
+    CLIENT_OPERATION_UNKNOWN = 0;
+    CLIENT_OPERATION_CREATE = 1;
+    CLIENT_OPERATION_DELETE = 2;
+    CLIENT_OPERATION_RENAME = 3;
+    CLIENT_OPERATION_READ = 4;
+    CLIENT_OPERATION_WRITE = 5;
+    CLIENT_OPERATION_APPEND = 6;
+    CLIENT_OPERATION_GET_FILE_INFO = 7;
+    CLIENT_OPERATION_GET_CHUNK_LOCATIONS = 8;
+}
+
+// -----------------------------------------------------------------------------
+// Generic client operation structures
+// -----------------------------------------------------------------------------
+
+message ClientOperationRequest {
+    ClientOperationType operation = 1;
+
+    string path = 2;
+    string destination_path = 3;
+
+    uint64 chunk_index = 4;
+    uint64 offset = 5;
+
+    bytes data = 6;
+    uint64 length = 7;
+
+    uint32 replication_factor = 8;
+}
+
+message ClientOperationResponse {
+    bool success = 1;
+    string error_message = 2;
+
+    bytes data = 3;
+
+    uint64 offset = 4;
+    uint64 size = 5;
+
+    uint64 chunk_handle = 6;
+    uint64 chunk_version = 7;
+
+    repeated uint64 replica_server_ids = 8;
+}
+
+// -----------------------------------------------------------------------------
+// Client read/write protocol structures
+// -----------------------------------------------------------------------------
+
+message ClientReadRequest {
+    string path = 1;
+    uint64 offset = 2;
+    uint64 length = 3;
+}
+
+message ClientReadResponse {
+    bool success = 1;
+    string error_message = 2;
+    bytes data = 3;
+}
+
+message ClientWriteRequest {
+    string path = 1;
+    uint64 offset = 2;
+    bytes data = 3;
+}
+
+message ClientWriteResponse {
+    bool success = 1;
+    string error_message = 2;
+    uint64 bytes_written = 3;
+}
+
+message ClientAppendRequest {
+    string path = 1;
+    bytes data = 2;
+}
+
+message ClientAppendResponse {
+    bool success = 1;
+    string error_message = 2;
+    uint64 offset = 3;
+    uint64 bytes_appended = 4;
+}
+
+// -----------------------------------------------------------------------------
+// Client protocol service
+// -----------------------------------------------------------------------------
+
+service ClientService {
+    rpc ExecuteOperation(ClientOperationRequest)
+        returns (ClientOperationResponse);
+
+    rpc Read(ClientReadRequest)
+        returns (ClientReadResponse);
+
+    rpc Write(ClientWriteRequest)
+        returns (ClientWriteResponse);
+
+    rpc Append(ClientAppendRequest)
+        returns (ClientAppendResponse);
+}

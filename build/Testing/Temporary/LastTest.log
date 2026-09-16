@@ -1,0 +1,192 @@
+Start testing: Sep 16 10:25 UTC
+----------------------------------------------------------
+1/7 Testing: CommonTypesTest.TypesAreUsable
+1/7 Test: CommonTypesTest.TypesAreUsable
+Command: "/workspaces/Google_File_System/build/gfs_common_test" "--gtest_filter=CommonTypesTest.TypesAreUsable" "--gtest_also_run_disabled_tests"
+Directory: /workspaces/Google_File_System/build
+"CommonTypesTest.TypesAreUsable" start time: Sep 16 10:25 UTC
+Output:
+----------------------------------------------------------
+Running main() from /workspaces/Google_File_System/build/_deps/googletest-src/googletest/src/gtest_main.cc
+Note: Google Test filter = CommonTypesTest.TypesAreUsable
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from CommonTypesTest
+[ RUN      ] CommonTypesTest.TypesAreUsable
+[       OK ] CommonTypesTest.TypesAreUsable (0 ms)
+[----------] 1 test from CommonTypesTest (0 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (0 ms total)
+[  PASSED  ] 1 test.
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"CommonTypesTest.TypesAreUsable" end time: Sep 16 10:25 UTC
+"CommonTypesTest.TypesAreUsable" time elapsed: 00:00:00
+----------------------------------------------------------
+
+2/7 Testing: ConstantsTest.GFSConstantsMatchPaper
+2/7 Test: ConstantsTest.GFSConstantsMatchPaper
+Command: "/workspaces/Google_File_System/build/gfs_common_test" "--gtest_filter=ConstantsTest.GFSConstantsMatchPaper" "--gtest_also_run_disabled_tests"
+Directory: /workspaces/Google_File_System/build
+"ConstantsTest.GFSConstantsMatchPaper" start time: Sep 16 10:25 UTC
+Output:
+----------------------------------------------------------
+Running main() from /workspaces/Google_File_System/build/_deps/googletest-src/googletest/src/gtest_main.cc
+Note: Google Test filter = ConstantsTest.GFSConstantsMatchPaper
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from ConstantsTest
+[ RUN      ] ConstantsTest.GFSConstantsMatchPaper
+[       OK ] ConstantsTest.GFSConstantsMatchPaper (0 ms)
+[----------] 1 test from ConstantsTest (0 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (0 ms total)
+[  PASSED  ] 1 test.
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"ConstantsTest.GFSConstantsMatchPaper" end time: Sep 16 10:25 UTC
+"ConstantsTest.GFSConstantsMatchPaper" time elapsed: 00:00:00
+----------------------------------------------------------
+
+3/7 Testing: StatusTest.OKStatusIsSuccessful
+3/7 Test: StatusTest.OKStatusIsSuccessful
+Command: "/workspaces/Google_File_System/build/gfs_common_test" "--gtest_filter=StatusTest.OKStatusIsSuccessful" "--gtest_also_run_disabled_tests"
+Directory: /workspaces/Google_File_System/build
+"StatusTest.OKStatusIsSuccessful" start time: Sep 16 10:25 UTC
+Output:
+----------------------------------------------------------
+Running main() from /workspaces/Google_File_System/build/_deps/googletest-src/googletest/src/gtest_main.cc
+Note: Google Test filter = StatusTest.OKStatusIsSuccessful
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from StatusTest
+[ RUN      ] StatusTest.OKStatusIsSuccessful
+[       OK ] StatusTest.OKStatusIsSuccessful (0 ms)
+[----------] 1 test from StatusTest (0 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (0 ms total)
+[  PASSED  ] 1 test.
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"StatusTest.OKStatusIsSuccessful" end time: Sep 16 10:25 UTC
+"StatusTest.OKStatusIsSuccessful" time elapsed: 00:00:00
+----------------------------------------------------------
+
+4/7 Testing: StatusTest.ErrorStatusContainsCodeAndMessage
+4/7 Test: StatusTest.ErrorStatusContainsCodeAndMessage
+Command: "/workspaces/Google_File_System/build/gfs_common_test" "--gtest_filter=StatusTest.ErrorStatusContainsCodeAndMessage" "--gtest_also_run_disabled_tests"
+Directory: /workspaces/Google_File_System/build
+"StatusTest.ErrorStatusContainsCodeAndMessage" start time: Sep 16 10:25 UTC
+Output:
+----------------------------------------------------------
+Running main() from /workspaces/Google_File_System/build/_deps/googletest-src/googletest/src/gtest_main.cc
+Note: Google Test filter = StatusTest.ErrorStatusContainsCodeAndMessage
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from StatusTest
+[ RUN      ] StatusTest.ErrorStatusContainsCodeAndMessage
+[       OK ] StatusTest.ErrorStatusContainsCodeAndMessage (0 ms)
+[----------] 1 test from StatusTest (0 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (0 ms total)
+[  PASSED  ] 1 test.
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"StatusTest.ErrorStatusContainsCodeAndMessage" end time: Sep 16 10:25 UTC
+"StatusTest.ErrorStatusContainsCodeAndMessage" time elapsed: 00:00:00
+----------------------------------------------------------
+
+5/7 Testing: UtilsTest.JoinPath
+5/7 Test: UtilsTest.JoinPath
+Command: "/workspaces/Google_File_System/build/gfs_common_test" "--gtest_filter=UtilsTest.JoinPath" "--gtest_also_run_disabled_tests"
+Directory: /workspaces/Google_File_System/build
+"UtilsTest.JoinPath" start time: Sep 16 10:25 UTC
+Output:
+----------------------------------------------------------
+Running main() from /workspaces/Google_File_System/build/_deps/googletest-src/googletest/src/gtest_main.cc
+Note: Google Test filter = UtilsTest.JoinPath
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from UtilsTest
+[ RUN      ] UtilsTest.JoinPath
+[       OK ] UtilsTest.JoinPath (0 ms)
+[----------] 1 test from UtilsTest (0 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (0 ms total)
+[  PASSED  ] 1 test.
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"UtilsTest.JoinPath" end time: Sep 16 10:25 UTC
+"UtilsTest.JoinPath" time elapsed: 00:00:00
+----------------------------------------------------------
+
+6/7 Testing: UtilsTest.ValidateFilePath
+6/7 Test: UtilsTest.ValidateFilePath
+Command: "/workspaces/Google_File_System/build/gfs_common_test" "--gtest_filter=UtilsTest.ValidateFilePath" "--gtest_also_run_disabled_tests"
+Directory: /workspaces/Google_File_System/build
+"UtilsTest.ValidateFilePath" start time: Sep 16 10:25 UTC
+Output:
+----------------------------------------------------------
+Running main() from /workspaces/Google_File_System/build/_deps/googletest-src/googletest/src/gtest_main.cc
+Note: Google Test filter = UtilsTest.ValidateFilePath
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from UtilsTest
+[ RUN      ] UtilsTest.ValidateFilePath
+[       OK ] UtilsTest.ValidateFilePath (0 ms)
+[----------] 1 test from UtilsTest (0 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (0 ms total)
+[  PASSED  ] 1 test.
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"UtilsTest.ValidateFilePath" end time: Sep 16 10:25 UTC
+"UtilsTest.ValidateFilePath" time elapsed: 00:00:00
+----------------------------------------------------------
+
+7/7 Testing: UtilsTest.UnixTimeMillisIsNonZero
+7/7 Test: UtilsTest.UnixTimeMillisIsNonZero
+Command: "/workspaces/Google_File_System/build/gfs_common_test" "--gtest_filter=UtilsTest.UnixTimeMillisIsNonZero" "--gtest_also_run_disabled_tests"
+Directory: /workspaces/Google_File_System/build
+"UtilsTest.UnixTimeMillisIsNonZero" start time: Sep 16 10:25 UTC
+Output:
+----------------------------------------------------------
+Running main() from /workspaces/Google_File_System/build/_deps/googletest-src/googletest/src/gtest_main.cc
+Note: Google Test filter = UtilsTest.UnixTimeMillisIsNonZero
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from UtilsTest
+[ RUN      ] UtilsTest.UnixTimeMillisIsNonZero
+[       OK ] UtilsTest.UnixTimeMillisIsNonZero (0 ms)
+[----------] 1 test from UtilsTest (0 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (0 ms total)
+[  PASSED  ] 1 test.
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"UtilsTest.UnixTimeMillisIsNonZero" end time: Sep 16 10:25 UTC
+"UtilsTest.UnixTimeMillisIsNonZero" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Sep 16 10:25 UTC

@@ -1,0 +1,2 @@
+/usr/bin/ar qc libgfs_core.a CMakeFiles/gfs_core.dir/src/common/types.cpp.o CMakeFiles/gfs_core.dir/src/common/status.cpp.o CMakeFiles/gfs_core.dir/src/common/utils.cpp.o
+/usr/bin/ranlib libgfs_core.a

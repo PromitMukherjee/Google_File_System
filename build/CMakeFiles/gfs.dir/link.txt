@@ -1,0 +1,1 @@
+/usr/bin/c++ CMakeFiles/gfs.dir/src/main.cpp.o -o gfs  libgfs_core.a 

@@ -1,0 +1,44 @@
+[
+{
+  "directory": "/workspaces/Google_File_System/build",
+  "command": "/usr/bin/c++  -I/workspaces/Google_File_System/include -std=c++20 -Wall -Wextra -Wpedantic -o CMakeFiles/gfs_core.dir/src/common/types.cpp.o -c /workspaces/Google_File_System/src/common/types.cpp",
+  "file": "/workspaces/Google_File_System/src/common/types.cpp",
+  "output": "CMakeFiles/gfs_core.dir/src/common/types.cpp.o"
+},
+{
+  "directory": "/workspaces/Google_File_System/build",
+  "command": "/usr/bin/c++  -I/workspaces/Google_File_System/include -std=c++20 -Wall -Wextra -Wpedantic -o CMakeFiles/gfs_core.dir/src/common/status.cpp.o -c /workspaces/Google_File_System/src/common/status.cpp",
+  "file": "/workspaces/Google_File_System/src/common/status.cpp",
+  "output": "CMakeFiles/gfs_core.dir/src/common/status.cpp.o"
+},
+{
+  "directory": "/workspaces/Google_File_System/build",
+  "command": "/usr/bin/c++  -I/workspaces/Google_File_System/include -std=c++20 -Wall -Wextra -Wpedantic -o CMakeFiles/gfs_core.dir/src/common/utils.cpp.o -c /workspaces/Google_File_System/src/common/utils.cpp",
+  "file": "/workspaces/Google_File_System/src/common/utils.cpp",
+  "output": "CMakeFiles/gfs_core.dir/src/common/utils.cpp.o"
+},
+{
+  "directory": "/workspaces/Google_File_System/build",
+  "command": "/usr/bin/c++  -I/workspaces/Google_File_System/include -std=c++20 -o CMakeFiles/gfs.dir/src/main.cpp.o -c /workspaces/Google_File_System/src/main.cpp",
+  "file": "/workspaces/Google_File_System/src/main.cpp",
+  "output": "CMakeFiles/gfs.dir/src/main.cpp.o"
+},
+{
+  "directory": "/workspaces/Google_File_System/build",
+  "command": "/usr/bin/c++  -I/workspaces/Google_File_System/include -isystem /workspaces/Google_File_System/build/_deps/googletest-src/googletest/include -isystem /workspaces/Google_File_System/build/_deps/googletest-src/googletest -std=c++20 -o CMakeFiles/gfs_common_test.dir/tests/common_test.cpp.o -c /workspaces/Google_File_System/tests/common_test.cpp",
+  "file": "/workspaces/Google_File_System/tests/common_test.cpp",
+  "output": "CMakeFiles/gfs_common_test.dir/tests/common_test.cpp.o"
+},
+{
+  "directory": "/workspaces/Google_File_System/build/_deps/googletest-build/googletest",
+  "command": "/usr/bin/c++  -I/workspaces/Google_File_System/build/_deps/googletest-src/googletest/include -I/workspaces/Google_File_System/build/_deps/googletest-src/googletest -std=c++20 -Wall -Wshadow -Wundef -Wno-error=dangling-else -DGTEST_HAS_PTHREAD=1 -fexceptions -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -o CMakeFiles/gtest.dir/src/gtest-all.cc.o -c /workspaces/Google_File_System/build/_deps/googletest-src/googletest/src/gtest-all.cc",
+  "file": "/workspaces/Google_File_System/build/_deps/googletest-src/googletest/src/gtest-all.cc",
+  "output": "_deps/googletest-build/googletest/CMakeFiles/gtest.dir/src/gtest-all.cc.o"
+},
+{
+  "directory": "/workspaces/Google_File_System/build/_deps/googletest-build/googletest",
+  "command": "/usr/bin/c++  -isystem /workspaces/Google_File_System/build/_deps/googletest-src/googletest/include -isystem /workspaces/Google_File_System/build/_deps/googletest-src/googletest -std=c++20 -Wall -Wshadow -Wundef -Wno-error=dangling-else -DGTEST_HAS_PTHREAD=1 -fexceptions -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -o CMakeFiles/gtest_main.dir/src/gtest_main.cc.o -c /workspaces/Google_File_System/build/_deps/googletest-src/googletest/src/gtest_main.cc",
+  "file": "/workspaces/Google_File_System/build/_deps/googletest-src/googletest/src/gtest_main.cc",
+  "output": "_deps/googletest-build/googletest/CMakeFiles/gtest_main.dir/src/gtest_main.cc.o"
+}
+]

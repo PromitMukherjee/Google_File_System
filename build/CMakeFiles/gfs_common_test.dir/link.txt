@@ -1,0 +1,1 @@
+/usr/bin/c++ CMakeFiles/gfs_common_test.dir/tests/common_test.cpp.o -o gfs_common_test  libgfs_core.a lib/libgtest_main.a lib/libgtest.a 

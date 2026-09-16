@@ -154,15 +154,29 @@ Master::GetChunkCount(
 bool Master::AddReplica(
     ChunkHandle handle,
     ServerId server_id) {
-    return metadata_.AddReplica(
-        handle,
-        server_id);
+    if (!metadata_.AddReplica(
+            handle,
+            server_id)) {
+        return false;
+    }
+
+    if (!replica_manager_.RegisterReplica(
+            handle,
+            server_id,
+            false)) {
+        metadata_.RemoveReplica(
+            handle,
+            server_id);
+        return false;
+    }
+
+    return true;
 }
 
 std::vector<ServerId>
 Master::GetChunkReplicas(
     ChunkHandle handle) const {
-    return metadata_.GetReplicas(handle);
+    return replica_manager_.GetReplicaServers(handle);
 }
 
 std::size_t Master::ChunkCount() const {
@@ -289,7 +303,8 @@ Master::GetChunkPrimary(
     return GetPrimary(handle);
 }
 
-bool Master::PlaceChunkReplicas(
+std::vector<ServerId>
+Master::PlaceChunkReplicas(
     ChunkHandle handle,
     const std::vector<replication::PlacementCandidate>&
         candidates) {
@@ -297,7 +312,7 @@ bool Master::PlaceChunkReplicas(
         SelectReplicaServers(handle, candidates);
 
     if (servers.empty()) {
-        return false;
+        return {};
     }
 
     bool primary_registered = false;
@@ -309,7 +324,7 @@ bool Master::PlaceChunkReplicas(
                 handle,
                 server_id,
                 is_primary)) {
-            return false;
+            return {};
         }
 
         if (is_primary) {
@@ -317,7 +332,11 @@ bool Master::PlaceChunkReplicas(
         }
     }
 
-    return primary_registered;
+    if (!primary_registered) {
+        return {};
+    }
+
+    return servers;
 }
 
 bool Master::SetChunkPrimary(

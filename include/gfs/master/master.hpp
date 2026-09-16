@@ -106,7 +106,7 @@ public:
     [[nodiscard]] std::optional<ServerId>
     GetChunkPrimary(ChunkHandle handle) const;
 
-    [[nodiscard]] bool PlaceChunkReplicas(
+    [[nodiscard]] std::vector<ServerId> PlaceChunkReplicas(
         ChunkHandle handle,
         const std::vector<replication::PlacementCandidate>& candidates);
 

@@ -127,6 +127,19 @@ depend:
 .PHONY : depend
 
 #=============================================================================
+# Target rules for targets named gfs_protocol
+
+# Build rule for target.
+gfs_protocol: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 gfs_protocol
+.PHONY : gfs_protocol
+
+# fast build rule for target.
+gfs_protocol/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gfs_protocol.dir/build.make CMakeFiles/gfs_protocol.dir/build
+.PHONY : gfs_protocol/fast
+
+#=============================================================================
 # Target rules for targets named gfs_core
 
 # Build rule for target.
@@ -166,6 +179,19 @@ gfs_common_test/fast:
 .PHONY : gfs_common_test/fast
 
 #=============================================================================
+# Target rules for targets named gfs_master_test
+
+# Build rule for target.
+gfs_master_test: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 gfs_master_test
+.PHONY : gfs_master_test
+
+# fast build rule for target.
+gfs_master_test/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gfs_master_test.dir/build.make CMakeFiles/gfs_master_test.dir/build
+.PHONY : gfs_master_test/fast
+
+#=============================================================================
 # Target rules for targets named gtest
 
 # Build rule for target.
@@ -190,6 +216,150 @@ gtest_main: cmake_check_build_system
 gtest_main/fast:
 	$(MAKE) $(MAKESILENT) -f _deps/googletest-build/googletest/CMakeFiles/gtest_main.dir/build.make _deps/googletest-build/googletest/CMakeFiles/gtest_main.dir/build
 .PHONY : gtest_main/fast
+
+generated/chunkserver.grpc.pb.o: generated/chunkserver.grpc.pb.cc.o
+.PHONY : generated/chunkserver.grpc.pb.o
+
+# target to build an object file
+generated/chunkserver.grpc.pb.cc.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gfs_protocol.dir/build.make CMakeFiles/gfs_protocol.dir/generated/chunkserver.grpc.pb.cc.o
+.PHONY : generated/chunkserver.grpc.pb.cc.o
+
+generated/chunkserver.grpc.pb.i: generated/chunkserver.grpc.pb.cc.i
+.PHONY : generated/chunkserver.grpc.pb.i
+
+# target to preprocess a source file
+generated/chunkserver.grpc.pb.cc.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gfs_protocol.dir/build.make CMakeFiles/gfs_protocol.dir/generated/chunkserver.grpc.pb.cc.i
+.PHONY : generated/chunkserver.grpc.pb.cc.i
+
+generated/chunkserver.grpc.pb.s: generated/chunkserver.grpc.pb.cc.s
+.PHONY : generated/chunkserver.grpc.pb.s
+
+# target to generate assembly for a file
+generated/chunkserver.grpc.pb.cc.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gfs_protocol.dir/build.make CMakeFiles/gfs_protocol.dir/generated/chunkserver.grpc.pb.cc.s
+.PHONY : generated/chunkserver.grpc.pb.cc.s
+
+generated/chunkserver.pb.o: generated/chunkserver.pb.cc.o
+.PHONY : generated/chunkserver.pb.o
+
+# target to build an object file
+generated/chunkserver.pb.cc.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gfs_protocol.dir/build.make CMakeFiles/gfs_protocol.dir/generated/chunkserver.pb.cc.o
+.PHONY : generated/chunkserver.pb.cc.o
+
+generated/chunkserver.pb.i: generated/chunkserver.pb.cc.i
+.PHONY : generated/chunkserver.pb.i
+
+# target to preprocess a source file
+generated/chunkserver.pb.cc.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gfs_protocol.dir/build.make CMakeFiles/gfs_protocol.dir/generated/chunkserver.pb.cc.i
+.PHONY : generated/chunkserver.pb.cc.i
+
+generated/chunkserver.pb.s: generated/chunkserver.pb.cc.s
+.PHONY : generated/chunkserver.pb.s
+
+# target to generate assembly for a file
+generated/chunkserver.pb.cc.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gfs_protocol.dir/build.make CMakeFiles/gfs_protocol.dir/generated/chunkserver.pb.cc.s
+.PHONY : generated/chunkserver.pb.cc.s
+
+generated/client.grpc.pb.o: generated/client.grpc.pb.cc.o
+.PHONY : generated/client.grpc.pb.o
+
+# target to build an object file
+generated/client.grpc.pb.cc.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gfs_protocol.dir/build.make CMakeFiles/gfs_protocol.dir/generated/client.grpc.pb.cc.o
+.PHONY : generated/client.grpc.pb.cc.o
+
+generated/client.grpc.pb.i: generated/client.grpc.pb.cc.i
+.PHONY : generated/client.grpc.pb.i
+
+# target to preprocess a source file
+generated/client.grpc.pb.cc.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gfs_protocol.dir/build.make CMakeFiles/gfs_protocol.dir/generated/client.grpc.pb.cc.i
+.PHONY : generated/client.grpc.pb.cc.i
+
+generated/client.grpc.pb.s: generated/client.grpc.pb.cc.s
+.PHONY : generated/client.grpc.pb.s
+
+# target to generate assembly for a file
+generated/client.grpc.pb.cc.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gfs_protocol.dir/build.make CMakeFiles/gfs_protocol.dir/generated/client.grpc.pb.cc.s
+.PHONY : generated/client.grpc.pb.cc.s
+
+generated/client.pb.o: generated/client.pb.cc.o
+.PHONY : generated/client.pb.o
+
+# target to build an object file
+generated/client.pb.cc.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gfs_protocol.dir/build.make CMakeFiles/gfs_protocol.dir/generated/client.pb.cc.o
+.PHONY : generated/client.pb.cc.o
+
+generated/client.pb.i: generated/client.pb.cc.i
+.PHONY : generated/client.pb.i
+
+# target to preprocess a source file
+generated/client.pb.cc.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gfs_protocol.dir/build.make CMakeFiles/gfs_protocol.dir/generated/client.pb.cc.i
+.PHONY : generated/client.pb.cc.i
+
+generated/client.pb.s: generated/client.pb.cc.s
+.PHONY : generated/client.pb.s
+
+# target to generate assembly for a file
+generated/client.pb.cc.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gfs_protocol.dir/build.make CMakeFiles/gfs_protocol.dir/generated/client.pb.cc.s
+.PHONY : generated/client.pb.cc.s
+
+generated/master.grpc.pb.o: generated/master.grpc.pb.cc.o
+.PHONY : generated/master.grpc.pb.o
+
+# target to build an object file
+generated/master.grpc.pb.cc.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gfs_protocol.dir/build.make CMakeFiles/gfs_protocol.dir/generated/master.grpc.pb.cc.o
+.PHONY : generated/master.grpc.pb.cc.o
+
+generated/master.grpc.pb.i: generated/master.grpc.pb.cc.i
+.PHONY : generated/master.grpc.pb.i
+
+# target to preprocess a source file
+generated/master.grpc.pb.cc.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gfs_protocol.dir/build.make CMakeFiles/gfs_protocol.dir/generated/master.grpc.pb.cc.i
+.PHONY : generated/master.grpc.pb.cc.i
+
+generated/master.grpc.pb.s: generated/master.grpc.pb.cc.s
+.PHONY : generated/master.grpc.pb.s
+
+# target to generate assembly for a file
+generated/master.grpc.pb.cc.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gfs_protocol.dir/build.make CMakeFiles/gfs_protocol.dir/generated/master.grpc.pb.cc.s
+.PHONY : generated/master.grpc.pb.cc.s
+
+generated/master.pb.o: generated/master.pb.cc.o
+.PHONY : generated/master.pb.o
+
+# target to build an object file
+generated/master.pb.cc.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gfs_protocol.dir/build.make CMakeFiles/gfs_protocol.dir/generated/master.pb.cc.o
+.PHONY : generated/master.pb.cc.o
+
+generated/master.pb.i: generated/master.pb.cc.i
+.PHONY : generated/master.pb.i
+
+# target to preprocess a source file
+generated/master.pb.cc.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gfs_protocol.dir/build.make CMakeFiles/gfs_protocol.dir/generated/master.pb.cc.i
+.PHONY : generated/master.pb.cc.i
+
+generated/master.pb.s: generated/master.pb.cc.s
+.PHONY : generated/master.pb.s
+
+# target to generate assembly for a file
+generated/master.pb.cc.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gfs_protocol.dir/build.make CMakeFiles/gfs_protocol.dir/generated/master.pb.cc.s
+.PHONY : generated/master.pb.cc.s
 
 src/common/status.o: src/common/status.cpp.o
 .PHONY : src/common/status.o
@@ -287,6 +457,222 @@ src/main.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/gfs.dir/build.make CMakeFiles/gfs.dir/src/main.cpp.s
 .PHONY : src/main.cpp.s
 
+src/master/master.o: src/master/master.cpp.o
+.PHONY : src/master/master.o
+
+# target to build an object file
+src/master/master.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gfs_core.dir/build.make CMakeFiles/gfs_core.dir/src/master/master.cpp.o
+.PHONY : src/master/master.cpp.o
+
+src/master/master.i: src/master/master.cpp.i
+.PHONY : src/master/master.i
+
+# target to preprocess a source file
+src/master/master.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gfs_core.dir/build.make CMakeFiles/gfs_core.dir/src/master/master.cpp.i
+.PHONY : src/master/master.cpp.i
+
+src/master/master.s: src/master/master.cpp.s
+.PHONY : src/master/master.s
+
+# target to generate assembly for a file
+src/master/master.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gfs_core.dir/build.make CMakeFiles/gfs_core.dir/src/master/master.cpp.s
+.PHONY : src/master/master.cpp.s
+
+src/master/metadata/chunk_metadata.o: src/master/metadata/chunk_metadata.cpp.o
+.PHONY : src/master/metadata/chunk_metadata.o
+
+# target to build an object file
+src/master/metadata/chunk_metadata.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gfs_core.dir/build.make CMakeFiles/gfs_core.dir/src/master/metadata/chunk_metadata.cpp.o
+.PHONY : src/master/metadata/chunk_metadata.cpp.o
+
+src/master/metadata/chunk_metadata.i: src/master/metadata/chunk_metadata.cpp.i
+.PHONY : src/master/metadata/chunk_metadata.i
+
+# target to preprocess a source file
+src/master/metadata/chunk_metadata.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gfs_core.dir/build.make CMakeFiles/gfs_core.dir/src/master/metadata/chunk_metadata.cpp.i
+.PHONY : src/master/metadata/chunk_metadata.cpp.i
+
+src/master/metadata/chunk_metadata.s: src/master/metadata/chunk_metadata.cpp.s
+.PHONY : src/master/metadata/chunk_metadata.s
+
+# target to generate assembly for a file
+src/master/metadata/chunk_metadata.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gfs_core.dir/build.make CMakeFiles/gfs_core.dir/src/master/metadata/chunk_metadata.cpp.s
+.PHONY : src/master/metadata/chunk_metadata.cpp.s
+
+src/master/metadata/file_metadata.o: src/master/metadata/file_metadata.cpp.o
+.PHONY : src/master/metadata/file_metadata.o
+
+# target to build an object file
+src/master/metadata/file_metadata.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gfs_core.dir/build.make CMakeFiles/gfs_core.dir/src/master/metadata/file_metadata.cpp.o
+.PHONY : src/master/metadata/file_metadata.cpp.o
+
+src/master/metadata/file_metadata.i: src/master/metadata/file_metadata.cpp.i
+.PHONY : src/master/metadata/file_metadata.i
+
+# target to preprocess a source file
+src/master/metadata/file_metadata.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gfs_core.dir/build.make CMakeFiles/gfs_core.dir/src/master/metadata/file_metadata.cpp.i
+.PHONY : src/master/metadata/file_metadata.cpp.i
+
+src/master/metadata/file_metadata.s: src/master/metadata/file_metadata.cpp.s
+.PHONY : src/master/metadata/file_metadata.s
+
+# target to generate assembly for a file
+src/master/metadata/file_metadata.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gfs_core.dir/build.make CMakeFiles/gfs_core.dir/src/master/metadata/file_metadata.cpp.s
+.PHONY : src/master/metadata/file_metadata.cpp.s
+
+src/master/metadata/metadata.o: src/master/metadata/metadata.cpp.o
+.PHONY : src/master/metadata/metadata.o
+
+# target to build an object file
+src/master/metadata/metadata.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gfs_core.dir/build.make CMakeFiles/gfs_core.dir/src/master/metadata/metadata.cpp.o
+.PHONY : src/master/metadata/metadata.cpp.o
+
+src/master/metadata/metadata.i: src/master/metadata/metadata.cpp.i
+.PHONY : src/master/metadata/metadata.i
+
+# target to preprocess a source file
+src/master/metadata/metadata.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gfs_core.dir/build.make CMakeFiles/gfs_core.dir/src/master/metadata/metadata.cpp.i
+.PHONY : src/master/metadata/metadata.cpp.i
+
+src/master/metadata/metadata.s: src/master/metadata/metadata.cpp.s
+.PHONY : src/master/metadata/metadata.s
+
+# target to generate assembly for a file
+src/master/metadata/metadata.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gfs_core.dir/build.make CMakeFiles/gfs_core.dir/src/master/metadata/metadata.cpp.s
+.PHONY : src/master/metadata/metadata.cpp.s
+
+src/master/namespace/namespace_lock.o: src/master/namespace/namespace_lock.cpp.o
+.PHONY : src/master/namespace/namespace_lock.o
+
+# target to build an object file
+src/master/namespace/namespace_lock.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gfs_core.dir/build.make CMakeFiles/gfs_core.dir/src/master/namespace/namespace_lock.cpp.o
+.PHONY : src/master/namespace/namespace_lock.cpp.o
+
+src/master/namespace/namespace_lock.i: src/master/namespace/namespace_lock.cpp.i
+.PHONY : src/master/namespace/namespace_lock.i
+
+# target to preprocess a source file
+src/master/namespace/namespace_lock.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gfs_core.dir/build.make CMakeFiles/gfs_core.dir/src/master/namespace/namespace_lock.cpp.i
+.PHONY : src/master/namespace/namespace_lock.cpp.i
+
+src/master/namespace/namespace_lock.s: src/master/namespace/namespace_lock.cpp.s
+.PHONY : src/master/namespace/namespace_lock.s
+
+# target to generate assembly for a file
+src/master/namespace/namespace_lock.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gfs_core.dir/build.make CMakeFiles/gfs_core.dir/src/master/namespace/namespace_lock.cpp.s
+.PHONY : src/master/namespace/namespace_lock.cpp.s
+
+src/master/namespace/namespace_manager.o: src/master/namespace/namespace_manager.cpp.o
+.PHONY : src/master/namespace/namespace_manager.o
+
+# target to build an object file
+src/master/namespace/namespace_manager.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gfs_core.dir/build.make CMakeFiles/gfs_core.dir/src/master/namespace/namespace_manager.cpp.o
+.PHONY : src/master/namespace/namespace_manager.cpp.o
+
+src/master/namespace/namespace_manager.i: src/master/namespace/namespace_manager.cpp.i
+.PHONY : src/master/namespace/namespace_manager.i
+
+# target to preprocess a source file
+src/master/namespace/namespace_manager.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gfs_core.dir/build.make CMakeFiles/gfs_core.dir/src/master/namespace/namespace_manager.cpp.i
+.PHONY : src/master/namespace/namespace_manager.cpp.i
+
+src/master/namespace/namespace_manager.s: src/master/namespace/namespace_manager.cpp.s
+.PHONY : src/master/namespace/namespace_manager.s
+
+# target to generate assembly for a file
+src/master/namespace/namespace_manager.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gfs_core.dir/build.make CMakeFiles/gfs_core.dir/src/master/namespace/namespace_manager.cpp.s
+.PHONY : src/master/namespace/namespace_manager.cpp.s
+
+src/protocol/chunkserver_service.o: src/protocol/chunkserver_service.cpp.o
+.PHONY : src/protocol/chunkserver_service.o
+
+# target to build an object file
+src/protocol/chunkserver_service.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gfs_core.dir/build.make CMakeFiles/gfs_core.dir/src/protocol/chunkserver_service.cpp.o
+.PHONY : src/protocol/chunkserver_service.cpp.o
+
+src/protocol/chunkserver_service.i: src/protocol/chunkserver_service.cpp.i
+.PHONY : src/protocol/chunkserver_service.i
+
+# target to preprocess a source file
+src/protocol/chunkserver_service.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gfs_core.dir/build.make CMakeFiles/gfs_core.dir/src/protocol/chunkserver_service.cpp.i
+.PHONY : src/protocol/chunkserver_service.cpp.i
+
+src/protocol/chunkserver_service.s: src/protocol/chunkserver_service.cpp.s
+.PHONY : src/protocol/chunkserver_service.s
+
+# target to generate assembly for a file
+src/protocol/chunkserver_service.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gfs_core.dir/build.make CMakeFiles/gfs_core.dir/src/protocol/chunkserver_service.cpp.s
+.PHONY : src/protocol/chunkserver_service.cpp.s
+
+src/protocol/client_service.o: src/protocol/client_service.cpp.o
+.PHONY : src/protocol/client_service.o
+
+# target to build an object file
+src/protocol/client_service.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gfs_core.dir/build.make CMakeFiles/gfs_core.dir/src/protocol/client_service.cpp.o
+.PHONY : src/protocol/client_service.cpp.o
+
+src/protocol/client_service.i: src/protocol/client_service.cpp.i
+.PHONY : src/protocol/client_service.i
+
+# target to preprocess a source file
+src/protocol/client_service.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gfs_core.dir/build.make CMakeFiles/gfs_core.dir/src/protocol/client_service.cpp.i
+.PHONY : src/protocol/client_service.cpp.i
+
+src/protocol/client_service.s: src/protocol/client_service.cpp.s
+.PHONY : src/protocol/client_service.s
+
+# target to generate assembly for a file
+src/protocol/client_service.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gfs_core.dir/build.make CMakeFiles/gfs_core.dir/src/protocol/client_service.cpp.s
+.PHONY : src/protocol/client_service.cpp.s
+
+src/protocol/master_service.o: src/protocol/master_service.cpp.o
+.PHONY : src/protocol/master_service.o
+
+# target to build an object file
+src/protocol/master_service.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gfs_core.dir/build.make CMakeFiles/gfs_core.dir/src/protocol/master_service.cpp.o
+.PHONY : src/protocol/master_service.cpp.o
+
+src/protocol/master_service.i: src/protocol/master_service.cpp.i
+.PHONY : src/protocol/master_service.i
+
+# target to preprocess a source file
+src/protocol/master_service.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gfs_core.dir/build.make CMakeFiles/gfs_core.dir/src/protocol/master_service.cpp.i
+.PHONY : src/protocol/master_service.cpp.i
+
+src/protocol/master_service.s: src/protocol/master_service.cpp.s
+.PHONY : src/protocol/master_service.s
+
+# target to generate assembly for a file
+src/protocol/master_service.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gfs_core.dir/build.make CMakeFiles/gfs_core.dir/src/protocol/master_service.cpp.s
+.PHONY : src/protocol/master_service.cpp.s
+
 tests/common_test.o: tests/common_test.cpp.o
 .PHONY : tests/common_test.o
 
@@ -311,6 +697,30 @@ tests/common_test.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/gfs_common_test.dir/build.make CMakeFiles/gfs_common_test.dir/tests/common_test.cpp.s
 .PHONY : tests/common_test.cpp.s
 
+tests/master_test.o: tests/master_test.cpp.o
+.PHONY : tests/master_test.o
+
+# target to build an object file
+tests/master_test.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gfs_master_test.dir/build.make CMakeFiles/gfs_master_test.dir/tests/master_test.cpp.o
+.PHONY : tests/master_test.cpp.o
+
+tests/master_test.i: tests/master_test.cpp.i
+.PHONY : tests/master_test.i
+
+# target to preprocess a source file
+tests/master_test.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gfs_master_test.dir/build.make CMakeFiles/gfs_master_test.dir/tests/master_test.cpp.i
+.PHONY : tests/master_test.cpp.i
+
+tests/master_test.s: tests/master_test.cpp.s
+.PHONY : tests/master_test.s
+
+# target to generate assembly for a file
+tests/master_test.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gfs_master_test.dir/build.make CMakeFiles/gfs_master_test.dir/tests/master_test.cpp.s
+.PHONY : tests/master_test.cpp.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -323,8 +733,28 @@ help:
 	@echo "... gfs"
 	@echo "... gfs_common_test"
 	@echo "... gfs_core"
+	@echo "... gfs_master_test"
+	@echo "... gfs_protocol"
 	@echo "... gtest"
 	@echo "... gtest_main"
+	@echo "... generated/chunkserver.grpc.pb.o"
+	@echo "... generated/chunkserver.grpc.pb.i"
+	@echo "... generated/chunkserver.grpc.pb.s"
+	@echo "... generated/chunkserver.pb.o"
+	@echo "... generated/chunkserver.pb.i"
+	@echo "... generated/chunkserver.pb.s"
+	@echo "... generated/client.grpc.pb.o"
+	@echo "... generated/client.grpc.pb.i"
+	@echo "... generated/client.grpc.pb.s"
+	@echo "... generated/client.pb.o"
+	@echo "... generated/client.pb.i"
+	@echo "... generated/client.pb.s"
+	@echo "... generated/master.grpc.pb.o"
+	@echo "... generated/master.grpc.pb.i"
+	@echo "... generated/master.grpc.pb.s"
+	@echo "... generated/master.pb.o"
+	@echo "... generated/master.pb.i"
+	@echo "... generated/master.pb.s"
 	@echo "... src/common/status.o"
 	@echo "... src/common/status.i"
 	@echo "... src/common/status.s"
@@ -337,9 +767,39 @@ help:
 	@echo "... src/main.o"
 	@echo "... src/main.i"
 	@echo "... src/main.s"
+	@echo "... src/master/master.o"
+	@echo "... src/master/master.i"
+	@echo "... src/master/master.s"
+	@echo "... src/master/metadata/chunk_metadata.o"
+	@echo "... src/master/metadata/chunk_metadata.i"
+	@echo "... src/master/metadata/chunk_metadata.s"
+	@echo "... src/master/metadata/file_metadata.o"
+	@echo "... src/master/metadata/file_metadata.i"
+	@echo "... src/master/metadata/file_metadata.s"
+	@echo "... src/master/metadata/metadata.o"
+	@echo "... src/master/metadata/metadata.i"
+	@echo "... src/master/metadata/metadata.s"
+	@echo "... src/master/namespace/namespace_lock.o"
+	@echo "... src/master/namespace/namespace_lock.i"
+	@echo "... src/master/namespace/namespace_lock.s"
+	@echo "... src/master/namespace/namespace_manager.o"
+	@echo "... src/master/namespace/namespace_manager.i"
+	@echo "... src/master/namespace/namespace_manager.s"
+	@echo "... src/protocol/chunkserver_service.o"
+	@echo "... src/protocol/chunkserver_service.i"
+	@echo "... src/protocol/chunkserver_service.s"
+	@echo "... src/protocol/client_service.o"
+	@echo "... src/protocol/client_service.i"
+	@echo "... src/protocol/client_service.s"
+	@echo "... src/protocol/master_service.o"
+	@echo "... src/protocol/master_service.i"
+	@echo "... src/protocol/master_service.s"
 	@echo "... tests/common_test.o"
 	@echo "... tests/common_test.i"
 	@echo "... tests/common_test.s"
+	@echo "... tests/master_test.o"
+	@echo "... tests/master_test.i"
+	@echo "... tests/master_test.s"
 .PHONY : help
 
 

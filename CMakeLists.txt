@@ -140,7 +140,7 @@ find_program(
 )
 
 # ============================================================
-# Protobuf / gRPC sources
+# Protobuf / gRPC code generation
 # ============================================================
 
 set(PROTO_FILES
@@ -252,8 +252,7 @@ endforeach()
 set_source_files_properties(
     ${GENERATED_PROTO_SRCS}
     ${GENERATED_PROTO_HDRS}
-    PROPERTIES
-        GENERATED TRUE
+    PROPERTIES GENERATED TRUE
 )
 
 # ============================================================
@@ -290,9 +289,19 @@ add_library(gfs_core
     src/common/types.cpp
     src/common/status.cpp
     src/common/utils.cpp
+
     src/protocol/master_service.cpp
     src/protocol/chunkserver_service.cpp
     src/protocol/client_service.cpp
+
+    src/master/metadata/metadata.cpp
+    src/master/metadata/file_metadata.cpp
+    src/master/metadata/chunk_metadata.cpp
+
+    src/master/namespace/namespace_manager.cpp
+    src/master/namespace/namespace_lock.cpp
+
+    src/master/master.cpp
 )
 
 target_include_directories(gfs_core
@@ -370,6 +379,22 @@ target_compile_features(gfs_common_test
         cxx_std_20
 )
 
+add_executable(gfs_master_test
+    tests/master_test.cpp
+)
+
+target_link_libraries(gfs_master_test
+    PRIVATE
+        gfs_core
+        GTest::gtest_main
+)
+
+target_compile_features(gfs_master_test
+    PRIVATE
+        cxx_std_20
+)
+
 include(GoogleTest)
 
 gtest_discover_tests(gfs_common_test)
+gtest_discover_tests(gfs_master_test)

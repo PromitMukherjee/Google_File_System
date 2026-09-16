@@ -111,11 +111,146 @@ CMakeFiles/gfs_core.dir/src/common/utils.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/gfs_core.dir/src/common/utils.cpp.s"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /workspaces/Google_File_System/src/common/utils.cpp -o CMakeFiles/gfs_core.dir/src/common/utils.cpp.s
 
+CMakeFiles/gfs_core.dir/src/protocol/master_service.cpp.o: CMakeFiles/gfs_core.dir/flags.make
+CMakeFiles/gfs_core.dir/src/protocol/master_service.cpp.o: /workspaces/Google_File_System/src/protocol/master_service.cpp
+CMakeFiles/gfs_core.dir/src/protocol/master_service.cpp.o: CMakeFiles/gfs_core.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/workspaces/Google_File_System/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/gfs_core.dir/src/protocol/master_service.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/gfs_core.dir/src/protocol/master_service.cpp.o -MF CMakeFiles/gfs_core.dir/src/protocol/master_service.cpp.o.d -o CMakeFiles/gfs_core.dir/src/protocol/master_service.cpp.o -c /workspaces/Google_File_System/src/protocol/master_service.cpp
+
+CMakeFiles/gfs_core.dir/src/protocol/master_service.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/gfs_core.dir/src/protocol/master_service.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /workspaces/Google_File_System/src/protocol/master_service.cpp > CMakeFiles/gfs_core.dir/src/protocol/master_service.cpp.i
+
+CMakeFiles/gfs_core.dir/src/protocol/master_service.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/gfs_core.dir/src/protocol/master_service.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /workspaces/Google_File_System/src/protocol/master_service.cpp -o CMakeFiles/gfs_core.dir/src/protocol/master_service.cpp.s
+
+CMakeFiles/gfs_core.dir/src/protocol/chunkserver_service.cpp.o: CMakeFiles/gfs_core.dir/flags.make
+CMakeFiles/gfs_core.dir/src/protocol/chunkserver_service.cpp.o: /workspaces/Google_File_System/src/protocol/chunkserver_service.cpp
+CMakeFiles/gfs_core.dir/src/protocol/chunkserver_service.cpp.o: CMakeFiles/gfs_core.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/workspaces/Google_File_System/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/gfs_core.dir/src/protocol/chunkserver_service.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/gfs_core.dir/src/protocol/chunkserver_service.cpp.o -MF CMakeFiles/gfs_core.dir/src/protocol/chunkserver_service.cpp.o.d -o CMakeFiles/gfs_core.dir/src/protocol/chunkserver_service.cpp.o -c /workspaces/Google_File_System/src/protocol/chunkserver_service.cpp
+
+CMakeFiles/gfs_core.dir/src/protocol/chunkserver_service.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/gfs_core.dir/src/protocol/chunkserver_service.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /workspaces/Google_File_System/src/protocol/chunkserver_service.cpp > CMakeFiles/gfs_core.dir/src/protocol/chunkserver_service.cpp.i
+
+CMakeFiles/gfs_core.dir/src/protocol/chunkserver_service.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/gfs_core.dir/src/protocol/chunkserver_service.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /workspaces/Google_File_System/src/protocol/chunkserver_service.cpp -o CMakeFiles/gfs_core.dir/src/protocol/chunkserver_service.cpp.s
+
+CMakeFiles/gfs_core.dir/src/protocol/client_service.cpp.o: CMakeFiles/gfs_core.dir/flags.make
+CMakeFiles/gfs_core.dir/src/protocol/client_service.cpp.o: /workspaces/Google_File_System/src/protocol/client_service.cpp
+CMakeFiles/gfs_core.dir/src/protocol/client_service.cpp.o: CMakeFiles/gfs_core.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/workspaces/Google_File_System/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/gfs_core.dir/src/protocol/client_service.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/gfs_core.dir/src/protocol/client_service.cpp.o -MF CMakeFiles/gfs_core.dir/src/protocol/client_service.cpp.o.d -o CMakeFiles/gfs_core.dir/src/protocol/client_service.cpp.o -c /workspaces/Google_File_System/src/protocol/client_service.cpp
+
+CMakeFiles/gfs_core.dir/src/protocol/client_service.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/gfs_core.dir/src/protocol/client_service.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /workspaces/Google_File_System/src/protocol/client_service.cpp > CMakeFiles/gfs_core.dir/src/protocol/client_service.cpp.i
+
+CMakeFiles/gfs_core.dir/src/protocol/client_service.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/gfs_core.dir/src/protocol/client_service.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /workspaces/Google_File_System/src/protocol/client_service.cpp -o CMakeFiles/gfs_core.dir/src/protocol/client_service.cpp.s
+
+CMakeFiles/gfs_core.dir/src/master/metadata/metadata.cpp.o: CMakeFiles/gfs_core.dir/flags.make
+CMakeFiles/gfs_core.dir/src/master/metadata/metadata.cpp.o: /workspaces/Google_File_System/src/master/metadata/metadata.cpp
+CMakeFiles/gfs_core.dir/src/master/metadata/metadata.cpp.o: CMakeFiles/gfs_core.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/workspaces/Google_File_System/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object CMakeFiles/gfs_core.dir/src/master/metadata/metadata.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/gfs_core.dir/src/master/metadata/metadata.cpp.o -MF CMakeFiles/gfs_core.dir/src/master/metadata/metadata.cpp.o.d -o CMakeFiles/gfs_core.dir/src/master/metadata/metadata.cpp.o -c /workspaces/Google_File_System/src/master/metadata/metadata.cpp
+
+CMakeFiles/gfs_core.dir/src/master/metadata/metadata.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/gfs_core.dir/src/master/metadata/metadata.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /workspaces/Google_File_System/src/master/metadata/metadata.cpp > CMakeFiles/gfs_core.dir/src/master/metadata/metadata.cpp.i
+
+CMakeFiles/gfs_core.dir/src/master/metadata/metadata.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/gfs_core.dir/src/master/metadata/metadata.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /workspaces/Google_File_System/src/master/metadata/metadata.cpp -o CMakeFiles/gfs_core.dir/src/master/metadata/metadata.cpp.s
+
+CMakeFiles/gfs_core.dir/src/master/metadata/file_metadata.cpp.o: CMakeFiles/gfs_core.dir/flags.make
+CMakeFiles/gfs_core.dir/src/master/metadata/file_metadata.cpp.o: /workspaces/Google_File_System/src/master/metadata/file_metadata.cpp
+CMakeFiles/gfs_core.dir/src/master/metadata/file_metadata.cpp.o: CMakeFiles/gfs_core.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/workspaces/Google_File_System/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building CXX object CMakeFiles/gfs_core.dir/src/master/metadata/file_metadata.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/gfs_core.dir/src/master/metadata/file_metadata.cpp.o -MF CMakeFiles/gfs_core.dir/src/master/metadata/file_metadata.cpp.o.d -o CMakeFiles/gfs_core.dir/src/master/metadata/file_metadata.cpp.o -c /workspaces/Google_File_System/src/master/metadata/file_metadata.cpp
+
+CMakeFiles/gfs_core.dir/src/master/metadata/file_metadata.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/gfs_core.dir/src/master/metadata/file_metadata.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /workspaces/Google_File_System/src/master/metadata/file_metadata.cpp > CMakeFiles/gfs_core.dir/src/master/metadata/file_metadata.cpp.i
+
+CMakeFiles/gfs_core.dir/src/master/metadata/file_metadata.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/gfs_core.dir/src/master/metadata/file_metadata.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /workspaces/Google_File_System/src/master/metadata/file_metadata.cpp -o CMakeFiles/gfs_core.dir/src/master/metadata/file_metadata.cpp.s
+
+CMakeFiles/gfs_core.dir/src/master/metadata/chunk_metadata.cpp.o: CMakeFiles/gfs_core.dir/flags.make
+CMakeFiles/gfs_core.dir/src/master/metadata/chunk_metadata.cpp.o: /workspaces/Google_File_System/src/master/metadata/chunk_metadata.cpp
+CMakeFiles/gfs_core.dir/src/master/metadata/chunk_metadata.cpp.o: CMakeFiles/gfs_core.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/workspaces/Google_File_System/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building CXX object CMakeFiles/gfs_core.dir/src/master/metadata/chunk_metadata.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/gfs_core.dir/src/master/metadata/chunk_metadata.cpp.o -MF CMakeFiles/gfs_core.dir/src/master/metadata/chunk_metadata.cpp.o.d -o CMakeFiles/gfs_core.dir/src/master/metadata/chunk_metadata.cpp.o -c /workspaces/Google_File_System/src/master/metadata/chunk_metadata.cpp
+
+CMakeFiles/gfs_core.dir/src/master/metadata/chunk_metadata.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/gfs_core.dir/src/master/metadata/chunk_metadata.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /workspaces/Google_File_System/src/master/metadata/chunk_metadata.cpp > CMakeFiles/gfs_core.dir/src/master/metadata/chunk_metadata.cpp.i
+
+CMakeFiles/gfs_core.dir/src/master/metadata/chunk_metadata.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/gfs_core.dir/src/master/metadata/chunk_metadata.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /workspaces/Google_File_System/src/master/metadata/chunk_metadata.cpp -o CMakeFiles/gfs_core.dir/src/master/metadata/chunk_metadata.cpp.s
+
+CMakeFiles/gfs_core.dir/src/master/namespace/namespace_manager.cpp.o: CMakeFiles/gfs_core.dir/flags.make
+CMakeFiles/gfs_core.dir/src/master/namespace/namespace_manager.cpp.o: /workspaces/Google_File_System/src/master/namespace/namespace_manager.cpp
+CMakeFiles/gfs_core.dir/src/master/namespace/namespace_manager.cpp.o: CMakeFiles/gfs_core.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/workspaces/Google_File_System/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Building CXX object CMakeFiles/gfs_core.dir/src/master/namespace/namespace_manager.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/gfs_core.dir/src/master/namespace/namespace_manager.cpp.o -MF CMakeFiles/gfs_core.dir/src/master/namespace/namespace_manager.cpp.o.d -o CMakeFiles/gfs_core.dir/src/master/namespace/namespace_manager.cpp.o -c /workspaces/Google_File_System/src/master/namespace/namespace_manager.cpp
+
+CMakeFiles/gfs_core.dir/src/master/namespace/namespace_manager.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/gfs_core.dir/src/master/namespace/namespace_manager.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /workspaces/Google_File_System/src/master/namespace/namespace_manager.cpp > CMakeFiles/gfs_core.dir/src/master/namespace/namespace_manager.cpp.i
+
+CMakeFiles/gfs_core.dir/src/master/namespace/namespace_manager.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/gfs_core.dir/src/master/namespace/namespace_manager.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /workspaces/Google_File_System/src/master/namespace/namespace_manager.cpp -o CMakeFiles/gfs_core.dir/src/master/namespace/namespace_manager.cpp.s
+
+CMakeFiles/gfs_core.dir/src/master/namespace/namespace_lock.cpp.o: CMakeFiles/gfs_core.dir/flags.make
+CMakeFiles/gfs_core.dir/src/master/namespace/namespace_lock.cpp.o: /workspaces/Google_File_System/src/master/namespace/namespace_lock.cpp
+CMakeFiles/gfs_core.dir/src/master/namespace/namespace_lock.cpp.o: CMakeFiles/gfs_core.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/workspaces/Google_File_System/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_11) "Building CXX object CMakeFiles/gfs_core.dir/src/master/namespace/namespace_lock.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/gfs_core.dir/src/master/namespace/namespace_lock.cpp.o -MF CMakeFiles/gfs_core.dir/src/master/namespace/namespace_lock.cpp.o.d -o CMakeFiles/gfs_core.dir/src/master/namespace/namespace_lock.cpp.o -c /workspaces/Google_File_System/src/master/namespace/namespace_lock.cpp
+
+CMakeFiles/gfs_core.dir/src/master/namespace/namespace_lock.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/gfs_core.dir/src/master/namespace/namespace_lock.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /workspaces/Google_File_System/src/master/namespace/namespace_lock.cpp > CMakeFiles/gfs_core.dir/src/master/namespace/namespace_lock.cpp.i
+
+CMakeFiles/gfs_core.dir/src/master/namespace/namespace_lock.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/gfs_core.dir/src/master/namespace/namespace_lock.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /workspaces/Google_File_System/src/master/namespace/namespace_lock.cpp -o CMakeFiles/gfs_core.dir/src/master/namespace/namespace_lock.cpp.s
+
+CMakeFiles/gfs_core.dir/src/master/master.cpp.o: CMakeFiles/gfs_core.dir/flags.make
+CMakeFiles/gfs_core.dir/src/master/master.cpp.o: /workspaces/Google_File_System/src/master/master.cpp
+CMakeFiles/gfs_core.dir/src/master/master.cpp.o: CMakeFiles/gfs_core.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/workspaces/Google_File_System/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_12) "Building CXX object CMakeFiles/gfs_core.dir/src/master/master.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/gfs_core.dir/src/master/master.cpp.o -MF CMakeFiles/gfs_core.dir/src/master/master.cpp.o.d -o CMakeFiles/gfs_core.dir/src/master/master.cpp.o -c /workspaces/Google_File_System/src/master/master.cpp
+
+CMakeFiles/gfs_core.dir/src/master/master.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/gfs_core.dir/src/master/master.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /workspaces/Google_File_System/src/master/master.cpp > CMakeFiles/gfs_core.dir/src/master/master.cpp.i
+
+CMakeFiles/gfs_core.dir/src/master/master.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/gfs_core.dir/src/master/master.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /workspaces/Google_File_System/src/master/master.cpp -o CMakeFiles/gfs_core.dir/src/master/master.cpp.s
+
 # Object files for target gfs_core
 gfs_core_OBJECTS = \
 "CMakeFiles/gfs_core.dir/src/common/types.cpp.o" \
 "CMakeFiles/gfs_core.dir/src/common/status.cpp.o" \
-"CMakeFiles/gfs_core.dir/src/common/utils.cpp.o"
+"CMakeFiles/gfs_core.dir/src/common/utils.cpp.o" \
+"CMakeFiles/gfs_core.dir/src/protocol/master_service.cpp.o" \
+"CMakeFiles/gfs_core.dir/src/protocol/chunkserver_service.cpp.o" \
+"CMakeFiles/gfs_core.dir/src/protocol/client_service.cpp.o" \
+"CMakeFiles/gfs_core.dir/src/master/metadata/metadata.cpp.o" \
+"CMakeFiles/gfs_core.dir/src/master/metadata/file_metadata.cpp.o" \
+"CMakeFiles/gfs_core.dir/src/master/metadata/chunk_metadata.cpp.o" \
+"CMakeFiles/gfs_core.dir/src/master/namespace/namespace_manager.cpp.o" \
+"CMakeFiles/gfs_core.dir/src/master/namespace/namespace_lock.cpp.o" \
+"CMakeFiles/gfs_core.dir/src/master/master.cpp.o"
 
 # External object files for target gfs_core
 gfs_core_EXTERNAL_OBJECTS =
@@ -123,9 +258,18 @@ gfs_core_EXTERNAL_OBJECTS =
 libgfs_core.a: CMakeFiles/gfs_core.dir/src/common/types.cpp.o
 libgfs_core.a: CMakeFiles/gfs_core.dir/src/common/status.cpp.o
 libgfs_core.a: CMakeFiles/gfs_core.dir/src/common/utils.cpp.o
+libgfs_core.a: CMakeFiles/gfs_core.dir/src/protocol/master_service.cpp.o
+libgfs_core.a: CMakeFiles/gfs_core.dir/src/protocol/chunkserver_service.cpp.o
+libgfs_core.a: CMakeFiles/gfs_core.dir/src/protocol/client_service.cpp.o
+libgfs_core.a: CMakeFiles/gfs_core.dir/src/master/metadata/metadata.cpp.o
+libgfs_core.a: CMakeFiles/gfs_core.dir/src/master/metadata/file_metadata.cpp.o
+libgfs_core.a: CMakeFiles/gfs_core.dir/src/master/metadata/chunk_metadata.cpp.o
+libgfs_core.a: CMakeFiles/gfs_core.dir/src/master/namespace/namespace_manager.cpp.o
+libgfs_core.a: CMakeFiles/gfs_core.dir/src/master/namespace/namespace_lock.cpp.o
+libgfs_core.a: CMakeFiles/gfs_core.dir/src/master/master.cpp.o
 libgfs_core.a: CMakeFiles/gfs_core.dir/build.make
 libgfs_core.a: CMakeFiles/gfs_core.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/workspaces/Google_File_System/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Linking CXX static library libgfs_core.a"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/workspaces/Google_File_System/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_13) "Linking CXX static library libgfs_core.a"
 	$(CMAKE_COMMAND) -P CMakeFiles/gfs_core.dir/cmake_clean_target.cmake
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/gfs_core.dir/link.txt --verbose=$(VERBOSE)
 

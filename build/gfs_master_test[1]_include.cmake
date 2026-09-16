@@ -1,0 +1,5 @@
+if(EXISTS "/workspaces/Google_File_System/build/gfs_master_test[1]_tests.cmake")
+  include("/workspaces/Google_File_System/build/gfs_master_test[1]_tests.cmake")
+else()
+  add_test(gfs_master_test_NOT_BUILT gfs_master_test_NOT_BUILT)
+endif()

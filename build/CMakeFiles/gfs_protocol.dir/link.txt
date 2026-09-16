@@ -1,0 +1,2 @@
+/usr/bin/ar qc libgfs_protocol.a CMakeFiles/gfs_protocol.dir/generated/master.pb.cc.o CMakeFiles/gfs_protocol.dir/generated/master.grpc.pb.cc.o CMakeFiles/gfs_protocol.dir/generated/chunkserver.pb.cc.o CMakeFiles/gfs_protocol.dir/generated/chunkserver.grpc.pb.cc.o CMakeFiles/gfs_protocol.dir/generated/client.pb.cc.o CMakeFiles/gfs_protocol.dir/generated/client.grpc.pb.cc.o
+/usr/bin/ranlib libgfs_protocol.a

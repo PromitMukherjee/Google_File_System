@@ -1,6 +1,8 @@
+/workspaces/Google_File_System/build/CMakeFiles/gfs_protocol.dir
 /workspaces/Google_File_System/build/CMakeFiles/gfs_core.dir
 /workspaces/Google_File_System/build/CMakeFiles/gfs.dir
 /workspaces/Google_File_System/build/CMakeFiles/gfs_common_test.dir
+/workspaces/Google_File_System/build/CMakeFiles/gfs_master_test.dir
 /workspaces/Google_File_System/build/CMakeFiles/test.dir
 /workspaces/Google_File_System/build/CMakeFiles/edit_cache.dir
 /workspaces/Google_File_System/build/CMakeFiles/rebuild_cache.dir

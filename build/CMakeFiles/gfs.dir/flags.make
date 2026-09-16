@@ -4,7 +4,7 @@
 # compile CXX with /usr/bin/c++
 CXX_DEFINES = 
 
-CXX_INCLUDES = -I/workspaces/Google_File_System/include
+CXX_INCLUDES = -I/workspaces/Google_File_System/include -I/workspaces/Google_File_System/build/generated
 
-CXX_FLAGS = -std=c++20
+CXX_FLAGS = -std=c++20 -pthread
 

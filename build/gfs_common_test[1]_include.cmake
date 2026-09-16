@@ -1,5 +1,0 @@
-if(EXISTS "/workspaces/Google_File_System/build/gfs_common_test[1]_tests.cmake")
-  include("/workspaces/Google_File_System/build/gfs_common_test[1]_tests.cmake")
-else()
-  add_test(gfs_common_test_NOT_BUILT gfs_common_test_NOT_BUILT)
-endif()

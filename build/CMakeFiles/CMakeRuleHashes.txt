@@ -1,4 +1,0 @@
-# Hashes of file build rules.
-6b8618f53580679c15e8f2795453480e generated/chunkserver.pb.cc
-ed78e391521698e82d7d5a58fd9b6078 generated/client.pb.cc
-e4b842ef3ebc74465ffa9e28e090776e generated/master.pb.cc

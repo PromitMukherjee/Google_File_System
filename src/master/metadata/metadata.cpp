@@ -1,271 +1,320 @@
-#include "gfs/master/metadata/metadata.hpp"
+#include "gfs/master/master.hpp"
 
-#include <algorithm>
+namespace gfs::master {
 
-namespace gfs::master::metadata {
+Master::Master(
+    std::uint32_t default_replication_factor)
+    : metadata_(),
+      namespace_manager_(),
+      replica_manager_(),
+      placement_policy_(default_replication_factor) {
+}
 
-bool Metadata::CreateFile(
+bool Master::Initialize() {
+    return true;
+}
+
+bool Master::CreateFile(
     const std::string& path,
     std::uint32_t replication_factor) {
-
-    if (path.empty() || files_.contains(path)) {
+    if (path.empty() || namespace_manager_.Exists(path)) {
         return false;
     }
 
-    if (replication_factor == 0) {
+    const std::uint32_t factor =
+        replication_factor == 0
+            ? 3
+            : replication_factor;
+
+    if (!namespace_manager_.CreateFile(path)) {
         return false;
     }
 
-    FileMetadata metadata(path, replication_factor);
-    files_.emplace(path, std::move(metadata));
+    if (!metadata_.CreateFile(path, factor)) {
+        namespace_manager_.DeleteFile(path);
+        return false;
+    }
+
     return true;
 }
 
-bool Metadata::DeleteFile(const std::string& path) {
-    const auto file_it = files_.find(path);
-    if (file_it == files_.end()) {
+bool Master::DeleteFile(
+    const std::string& path) {
+    if (!namespace_manager_.IsFile(path)) {
         return false;
     }
 
-    for (const ChunkHandle handle : file_it->second.GetChunkHandles()) {
-        chunks_.erase(handle);
+    if (!metadata_.DeleteFile(path)) {
+        return false;
     }
 
-    files_.erase(file_it);
-    return true;
+    return namespace_manager_.DeleteFile(path);
 }
 
-bool Metadata::RenameFile(
+bool Master::RenameFile(
     const std::string& source_path,
     const std::string& destination_path) {
-
-    if (source_path.empty() ||
-        destination_path.empty() ||
-        source_path == destination_path) {
+    if (!namespace_manager_.IsFile(source_path) ||
+        namespace_manager_.Exists(destination_path)) {
         return false;
     }
 
-    const auto source_it = files_.find(source_path);
-    if (source_it == files_.end() ||
-        files_.contains(destination_path)) {
+    if (!namespace_manager_.Rename(
+            source_path,
+            destination_path)) {
         return false;
     }
 
-    FileMetadata metadata = source_it->second;
-    metadata.SetPath(destination_path);
-
-    files_.erase(source_it);
-    files_.emplace(destination_path, std::move(metadata));
+    if (!metadata_.RenameFile(
+            source_path,
+            destination_path)) {
+        namespace_manager_.Rename(
+            destination_path,
+            source_path);
+        return false;
+    }
 
     return true;
 }
 
-bool Metadata::FileExists(const std::string& path) const {
-    return files_.contains(path);
-}
-
-std::optional<FileMetadata> Metadata::GetFile(
+bool Master::FileExists(
     const std::string& path) const {
-
-    const auto it = files_.find(path);
-    if (it == files_.end()) {
-        return std::nullopt;
-    }
-
-    return it->second;
+    return namespace_manager_.Exists(path) &&
+           namespace_manager_.IsFile(path);
 }
 
-bool Metadata::UpdateFileSize(
-    const std::string& path,
-    std::uint64_t size) {
-
-    const auto it = files_.find(path);
-    if (it == files_.end()) {
-        return false;
-    }
-
-    it->second.SetSize(size);
-    return true;
-}
-
-std::optional<ChunkHandle> Metadata::AllocateChunk(
+bool Master::CreateDirectory(
     const std::string& path) {
-
-    const auto file_it = files_.find(path);
-    if (file_it == files_.end()) {
-        return std::nullopt;
-    }
-
-    const ChunkHandle handle = GenerateChunkHandle();
-
-    ChunkMetadata chunk(handle);
-    chunk.SetVersion(1);
-    chunk.SetSize(0);
-
-    chunks_.emplace(handle, std::move(chunk));
-    file_it->second.AddChunk(handle);
-
-    return handle;
+    return namespace_manager_.CreateDirectory(path);
 }
 
-bool Metadata::AddChunkToFile(
+bool Master::DirectoryExists(
+    const std::string& path) const {
+    return namespace_manager_.Exists(path) &&
+           namespace_manager_.IsDirectory(path);
+}
+
+std::optional<metadata::FileMetadata>
+Master::GetFile(
+    const std::string& path) const {
+    return metadata_.GetFile(path);
+}
+
+std::optional<metadata::FileMetadata>
+Master::GetFileInfo(
+    const std::string& path) const {
+    return metadata_.GetFile(path);
+}
+
+std::optional<metadata::ChunkMetadata>
+Master::GetChunkInfo(
+    ChunkHandle handle) const {
+    return metadata_.GetChunk(handle);
+}
+
+std::optional<ChunkHandle>
+Master::AllocateChunk(
+    const std::string& path) {
+    return metadata_.AllocateChunk(path);
+}
+
+bool Master::AddChunkToFile(
     const std::string& path,
-    ChunkHandle chunk_handle) {
-
-    const auto file_it = files_.find(path);
-    const auto chunk_it = chunks_.find(chunk_handle);
-
-    if (file_it == files_.end() ||
-        chunk_it == chunks_.end()) {
-        return false;
-    }
-
-    return file_it->second.AddChunk(chunk_handle);
+    ChunkHandle handle) {
+    return metadata_.AddChunkToFile(
+        path,
+        handle);
 }
 
-bool Metadata::RemoveChunkFromFile(
+bool Master::RemoveChunkFromFile(
     const std::string& path,
-    ChunkHandle chunk_handle) {
-
-    const auto file_it = files_.find(path);
-    if (file_it == files_.end()) {
-        return false;
-    }
-
-    return file_it->second.RemoveChunk(chunk_handle);
+    ChunkHandle handle) {
+    return metadata_.RemoveChunkFromFile(
+        path,
+        handle);
 }
 
-std::optional<ChunkMetadata> Metadata::GetChunk(
-    ChunkHandle chunk_handle) const {
-
-    const auto it = chunks_.find(chunk_handle);
-    if (it == chunks_.end()) {
-        return std::nullopt;
-    }
-
-    return it->second;
+std::vector<ChunkHandle>
+Master::GetFileChunks(
+    const std::string& path) const {
+    return metadata_.GetFileChunks(path);
 }
 
-bool Metadata::ChunkExists(ChunkHandle chunk_handle) const {
-    return chunks_.contains(chunk_handle);
+std::optional<std::size_t>
+Master::GetChunkCount(
+    const std::string& path) const {
+    return metadata_.GetChunkCount(path);
 }
 
-bool Metadata::DeleteChunk(ChunkHandle chunk_handle) {
-    for (auto& [path, file] : files_) {
-        file.RemoveChunk(chunk_handle);
-    }
-
-    return chunks_.erase(chunk_handle) != 0;
-}
-
-bool Metadata::AddReplica(
-    ChunkHandle chunk_handle,
+bool Master::AddReplica(
+    ChunkHandle handle,
     ServerId server_id) {
+    return metadata_.AddReplica(
+        handle,
+        server_id);
+}
 
-    const auto it = chunks_.find(chunk_handle);
-    if (it == chunks_.end()) {
+std::vector<ServerId>
+Master::GetChunkReplicas(
+    ChunkHandle handle) const {
+    return metadata_.GetReplicas(handle);
+}
+
+std::size_t Master::ChunkCount() const {
+    return metadata_.ChunkCount();
+}
+
+std::size_t Master::NamespaceNodeCount() const {
+    return namespace_manager_.NodeCount();
+}
+
+std::size_t Master::FileCount() const {
+    return metadata_.FileCount();
+}
+
+namespace_management::NamespaceManager&
+Master::GetNamespaceManager() noexcept {
+    return namespace_manager_;
+}
+
+const namespace_management::NamespaceManager&
+Master::GetNamespaceManager() const noexcept {
+    return namespace_manager_;
+}
+
+replication::ReplicaManager&
+Master::GetReplicaManager() noexcept {
+    return replica_manager_;
+}
+
+const replication::ReplicaManager&
+Master::GetReplicaManager() const noexcept {
+    return replica_manager_;
+}
+
+replication::PlacementPolicy&
+Master::GetPlacementPolicy() noexcept {
+    return placement_policy_;
+}
+
+const replication::PlacementPolicy&
+Master::GetPlacementPolicy() const noexcept {
+    return placement_policy_;
+}
+
+bool Master::RegisterChunkReplica(
+    ChunkHandle handle,
+    ServerId server_id,
+    bool is_primary) {
+    return RegisterReplica(
+        handle,
+        server_id,
+        is_primary);
+}
+
+bool Master::HasChunkReplica(
+    ChunkHandle handle,
+    ServerId server_id) const {
+    return HasReplica(
+        handle,
+        server_id);
+}
+
+std::optional<ServerId>
+Master::GetChunkPrimary(
+    ChunkHandle handle) const {
+    return GetPrimary(handle);
+}
+
+bool Master::PlaceChunkReplicas(
+    ChunkHandle handle,
+    const std::vector<replication::PlacementCandidate>&
+        candidates) {
+    const auto selected =
+        SelectReplicaServers(handle, candidates);
+
+    if (selected.empty()) {
         return false;
     }
 
-    return it->second.AddReplica(server_id);
-}
-
-bool Metadata::RemoveReplica(
-    ChunkHandle chunk_handle,
-    ServerId server_id) {
-
-    const auto it = chunks_.find(chunk_handle);
-    if (it == chunks_.end()) {
-        return false;
+    for (std::size_t index = 0;
+         index < selected.size();
+         ++index) {
+        if (!RegisterReplica(
+                handle,
+                selected[index],
+                index == 0)) {
+            return false;
+        }
     }
 
-    return it->second.RemoveReplica(server_id);
-}
-
-std::vector<ServerId> Metadata::GetReplicas(
-    ChunkHandle chunk_handle) const {
-
-    const auto it = chunks_.find(chunk_handle);
-    if (it == chunks_.end()) {
-        return {};
-    }
-
-    return it->second.GetReplicaServerIds();
-}
-
-bool Metadata::SetChunkVersion(
-    ChunkHandle chunk_handle,
-    ChunkVersion version) {
-
-    const auto it = chunks_.find(chunk_handle);
-    if (it == chunks_.end() || version == 0) {
-        return false;
-    }
-
-    it->second.SetVersion(version);
     return true;
 }
 
-std::optional<ChunkVersion> Metadata::GetChunkVersion(
-    ChunkHandle chunk_handle) const {
-
-    const auto it = chunks_.find(chunk_handle);
-    if (it == chunks_.end()) {
-        return std::nullopt;
-    }
-
-    return it->second.GetVersion();
+bool Master::SetChunkPrimary(
+    ChunkHandle handle,
+    ServerId server_id) {
+    return SetPrimary(
+        handle,
+        server_id);
 }
 
-bool Metadata::SetChunkSize(
-    ChunkHandle chunk_handle,
-    std::uint64_t size) {
-
-    const auto it = chunks_.find(chunk_handle);
-    if (it == chunks_.end()) {
-        return false;
-    }
-
-    it->second.SetSize(size);
-    return true;
+bool Master::RegisterReplica(
+    ChunkHandle handle,
+    ServerId server_id,
+    bool is_primary) {
+    return replica_manager_.RegisterReplica(
+        handle,
+        server_id,
+        is_primary);
 }
 
-std::optional<std::size_t> Metadata::GetChunkCount(
-    const std::string& path) const {
-
-    const auto it = files_.find(path);
-    if (it == files_.end()) {
-        return std::nullopt;
-    }
-
-    return it->second.ChunkCount();
+bool Master::RemoveReplica(
+    ChunkHandle handle,
+    ServerId server_id) {
+    return replica_manager_.RemoveReplica(
+        handle,
+        server_id);
 }
 
-std::vector<ChunkHandle> Metadata::GetFileChunks(
-    const std::string& path) const {
-
-    const auto it = files_.find(path);
-    if (it == files_.end()) {
-        return {};
-    }
-
-    return it->second.GetChunkHandles();
+bool Master::HasReplica(
+    ChunkHandle handle,
+    ServerId server_id) const {
+    return replica_manager_.HasReplica(
+        handle,
+        server_id);
 }
 
-std::size_t Metadata::FileCount() const {
-    return files_.size();
+std::vector<ServerId>
+Master::GetReplicaServers(
+    ChunkHandle handle) const {
+    return replica_manager_.GetReplicaServers(handle);
 }
 
-std::size_t Metadata::ChunkCount() const {
-    return chunks_.size();
+std::optional<ServerId>
+Master::GetPrimary(
+    ChunkHandle handle) const {
+    return replica_manager_.GetPrimary(handle);
 }
 
-ChunkHandle Metadata::GenerateChunkHandle() {
-    while (chunks_.contains(next_chunk_handle_)) {
-        ++next_chunk_handle_;
-    }
-
-    return next_chunk_handle_++;
+bool Master::SetPrimary(
+    ChunkHandle handle,
+    ServerId server_id) {
+    return replica_manager_.SetPrimary(
+        handle,
+        server_id);
 }
 
-}  // namespace gfs::master::metadata
+std::vector<ServerId>
+Master::SelectReplicaServers(
+    ChunkHandle handle,
+    const std::vector<replication::PlacementCandidate>&
+        candidates) const {
+    replication::PlacementRequest request;
+    request.handle = handle;
+    request.candidates = candidates;
+
+    return placement_policy_.SelectReplicas(request);
+}
+
+}  // namespace gfs::master

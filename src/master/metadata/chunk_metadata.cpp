@@ -31,8 +31,8 @@ std::uint64_t ChunkMetadata::GetSize() const noexcept {
 }
 
 void ChunkMetadata::SetSize(
-    std::uint64_t value) noexcept {
-    size = value;
+    std::uint64_t chunk_size) noexcept {
+    size = chunk_size;
 }
 
 bool ChunkMetadata::AddReplica(
@@ -57,15 +57,15 @@ ChunkMetadata::GetReplicas() const noexcept {
 
 std::vector<ServerId>
 ChunkMetadata::GetReplicaServerIds() const {
-    std::vector<ServerId> replica_ids(
+    std::vector<ServerId> server_ids(
         replicas.begin(),
         replicas.end());
 
     std::sort(
-        replica_ids.begin(),
-        replica_ids.end());
+        server_ids.begin(),
+        server_ids.end());
 
-    return replica_ids;
+    return server_ids;
 }
 
 std::size_t ChunkMetadata::ReplicaCount() const noexcept {

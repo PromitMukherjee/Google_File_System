@@ -2,7 +2,6 @@
 
 #include <algorithm>
 #include <unordered_set>
-#include <utility>
 
 namespace gfs::master::replication {
 
@@ -11,7 +10,8 @@ PlacementPolicy::PlacementPolicy(
     : replication_factor_(
           replication_factor == 0
               ? gfs::constants::kDefaultReplicationFactor
-              : replication_factor) {}
+              : replication_factor) {
+}
 
 std::size_t PlacementPolicy::GetReplicationFactor() const noexcept {
     return replication_factor_;
@@ -33,6 +33,10 @@ std::vector<ServerId> PlacementPolicy::SelectReplicas(
         request.replication_factor == 0
             ? replication_factor_
             : request.replication_factor;
+
+    if (factor == 0) {
+        return {};
+    }
 
     std::vector<PlacementCandidate> candidates =
         request.candidates;
@@ -68,9 +72,13 @@ std::vector<ServerId> PlacementPolicy::SelectReplicas(
 
         selected.push_back(candidate.server_id);
 
-        if (selected.size() >= factor) {
+        if (selected.size() == factor) {
             break;
         }
+    }
+
+    if (!IsValidPlacement(selected, factor)) {
+        return {};
     }
 
     return selected;

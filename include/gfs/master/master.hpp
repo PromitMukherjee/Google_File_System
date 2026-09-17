@@ -1,4 +1,3 @@
-
 #pragma once
 
 #include "gfs/common/types.hpp"
@@ -8,6 +7,8 @@
 #include "gfs/master/namespace/namespace_manager.hpp"
 #include "gfs/master/replication/placement_policy.hpp"
 #include "gfs/master/replication/replica_manager.hpp"
+#include "gfs/master/replication/re_replication.hpp"
+#include "gfs/master/recovery/recovery_manager.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -53,6 +54,14 @@ public:
 
     [[nodiscard]] std::optional<metadata::ChunkMetadata> GetChunkInfo(
         ChunkHandle handle) const;
+
+    [[nodiscard]] std::optional<std::uint32_t>
+    GetChunkReplicationFactor(
+        ChunkHandle handle) const;
+
+    [[nodiscard]] bool SetChunkVersion(
+        ChunkHandle handle,
+        ChunkVersion version);
 
     [[nodiscard]] std::optional<ChunkHandle> AllocateChunk(
         const std::string& path);
@@ -106,6 +115,18 @@ public:
 
     [[nodiscard]] const heartbeat::HeartbeatManager&
     GetHeartbeatManager() const noexcept;
+
+    [[nodiscard]] replication::ReReplicationManager&
+    GetReReplicationManager() noexcept;
+
+    [[nodiscard]] const replication::ReReplicationManager&
+    GetReReplicationManager() const noexcept;
+
+    [[nodiscard]] recovery::RecoveryManager&
+    GetRecoveryManager() noexcept;
+
+    [[nodiscard]] const recovery::RecoveryManager&
+    GetRecoveryManager() const noexcept;
 
     [[nodiscard]] bool Initialize();
 
@@ -232,6 +253,8 @@ private:
     replication::PlacementPolicy placement_policy_;
     lease::LeaseManager lease_manager_;
     heartbeat::HeartbeatManager heartbeat_manager_;
+    replication::ReReplicationManager re_replication_manager_;
+    recovery::RecoveryManager recovery_manager_;
 };
 
 }  // namespace gfs::master

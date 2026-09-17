@@ -77,6 +77,10 @@ public:
     std::optional<ChunkVersion> GetChunkVersion(
         ChunkHandle chunk_handle) const;
 
+    std::optional<std::uint32_t>
+    GetChunkReplicationFactor(
+        ChunkHandle chunk_handle) const;
+
     bool SetChunkSize(
         ChunkHandle chunk_handle,
         std::uint64_t size);

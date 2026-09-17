@@ -211,6 +211,9 @@ add_library(gfs_core
 
     src/master/replication/replica_manager.cpp
     src/master/replication/placement_policy.cpp
+    src/master/replication/re_replication.cpp
+
+    src/master/recovery/recovery_manager.cpp
 
     src/chunkserver/checksum/checksum_block.cpp
     src/chunkserver/checksum/checksum_manager.cpp
@@ -364,6 +367,16 @@ target_link_libraries(gfs_phase9_test
         GTest::gtest_main
 )
 
+add_executable(gfs_phase10_test
+    tests/phase10_test.cpp
+)
+
+target_link_libraries(gfs_phase10_test
+    PRIVATE
+        gfs_core
+        GTest::gtest_main
+)
+
 foreach(TEST_TARGET
         gfs_common_test
         gfs_master_test
@@ -372,7 +385,8 @@ foreach(TEST_TARGET
         gfs_replication_test
         gfs_phase7_test
         gfs_phase8_test
-        gfs_phase9_test)
+        gfs_phase9_test
+        gfs_phase10_test)
     target_include_directories(${TEST_TARGET}
         PRIVATE
             ${CMAKE_CURRENT_SOURCE_DIR}/include

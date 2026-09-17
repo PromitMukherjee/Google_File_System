@@ -1,6 +1,7 @@
 #pragma once
 
 #include "gfs/common/types.hpp"
+#include "gfs/master/heartbeat/heartbeat_manager.hpp"
 #include "gfs/master/lease/lease_manager.hpp"
 #include "gfs/master/metadata/metadata.hpp"
 #include "gfs/master/namespace/namespace_manager.hpp"
@@ -99,6 +100,12 @@ public:
     [[nodiscard]] const lease::LeaseManager&
     GetLeaseManager() const noexcept;
 
+    [[nodiscard]] heartbeat::HeartbeatManager&
+    GetHeartbeatManager() noexcept;
+
+    [[nodiscard]] const heartbeat::HeartbeatManager&
+    GetHeartbeatManager() const noexcept;
+
     [[nodiscard]] bool Initialize();
 
     [[nodiscard]] bool RegisterChunkReplica(
@@ -184,12 +191,34 @@ public:
     [[nodiscard]] bool ReleaseLease(
         ChunkHandle handle);
 
+    [[nodiscard]] bool ProcessHeartbeat(
+        ServerId server_id,
+        std::uint64_t timestamp_ms,
+        const std::vector<heartbeat::ReportedChunk>&
+            chunks);
+
+    [[nodiscard]] bool ProcessHeartbeat(
+        ServerId server_id,
+        std::uint64_t timestamp_ms);
+
+    [[nodiscard]] bool IsChunkserverAlive(
+        ServerId server_id) const;
+
+    [[nodiscard]] bool IsChunkserverAlive(
+        ServerId server_id,
+        std::uint64_t now_ms) const;
+
+    [[nodiscard]] std::vector<ServerId>
+    DetectFailedChunkservers(
+        std::uint64_t now_ms);
+
 private:
     metadata::Metadata metadata_;
     namespace_management::NamespaceManager namespace_manager_;
     replication::ReplicaManager replica_manager_;
     replication::PlacementPolicy placement_policy_;
     lease::LeaseManager lease_manager_;
+    heartbeat::HeartbeatManager heartbeat_manager_;
 };
 
 }  // namespace gfs::master

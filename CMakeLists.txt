@@ -204,6 +204,9 @@ add_library(gfs_core
     src/master/lease/lease.cpp
     src/master/lease/lease_manager.cpp
 
+    src/master/heartbeat/chunkserver_state.cpp
+    src/master/heartbeat/heartbeat_manager.cpp
+
     src/master/master.cpp
 
     src/chunkserver/storage/chunk_storage.cpp
@@ -212,6 +215,8 @@ add_library(gfs_core
 
     src/chunkserver/mutation/mutation.cpp
     src/chunkserver/mutation/mutation_manager.cpp
+
+    src/chunkserver/heartbeat/heartbeat_client.cpp
 
     src/chunkserver/chunkserver.cpp
 
@@ -274,7 +279,7 @@ target_include_directories(gfs
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${GENERATED_DIR}
-)
+    )
 
 add_executable(gfs_common_test
     tests/common_test.cpp
@@ -336,13 +341,24 @@ target_link_libraries(gfs_phase7_test
         GTest::gtest_main
 )
 
+add_executable(gfs_phase8_test
+    tests/phase8_test.cpp
+)
+
+target_link_libraries(gfs_phase8_test
+    PRIVATE
+        gfs_core
+        GTest::gtest_main
+)
+
 foreach(TEST_TARGET
         gfs_common_test
         gfs_master_test
         gfs_chunkserver_test
         gfs_client_test
         gfs_replication_test
-        gfs_phase7_test)
+        gfs_phase7_test
+        gfs_phase8_test)
     target_include_directories(${TEST_TARGET}
         PRIVATE
             ${CMAKE_CURRENT_SOURCE_DIR}/include

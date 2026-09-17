@@ -2,6 +2,7 @@
 
 #include <grpcpp/grpcpp.h>
 
+#include "gfs/master/master.hpp"
 #include "master.grpc.pb.h"
 
 namespace gfs::protocol {
@@ -10,7 +11,14 @@ class MasterServiceImpl final
     : public ::gfs::protocol::MasterService::Service {
 public:
     MasterServiceImpl() = default;
+
+    explicit MasterServiceImpl(
+        ::gfs::master::Master& master) noexcept;
+
     ~MasterServiceImpl() override = default;
+
+    void SetMaster(
+        ::gfs::master::Master& master) noexcept;
 
     ::grpc::Status CreateFile(
         ::grpc::ServerContext* context,
@@ -53,6 +61,9 @@ public:
         const ::gfs::protocol::HeartbeatRequest* request,
         ::gfs::protocol::HeartbeatResponse* response
     ) override;
+
+private:
+    ::gfs::master::Master* master_ = nullptr;
 };
 
 }  // namespace gfs::protocol

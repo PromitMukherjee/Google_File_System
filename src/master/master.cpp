@@ -13,7 +13,8 @@ Master::Master(
       namespace_manager_(),
       replica_manager_(),
       placement_policy_(default_replication_factor),
-      lease_manager_(replica_manager_) {
+      lease_manager_(replica_manager_),
+      heartbeat_manager_() {
 }
 
 bool Master::Initialize() {
@@ -213,6 +214,16 @@ Master::GetLeaseManager() const noexcept {
     return lease_manager_;
 }
 
+heartbeat::HeartbeatManager&
+Master::GetHeartbeatManager() noexcept {
+    return heartbeat_manager_;
+}
+
+const heartbeat::HeartbeatManager&
+Master::GetHeartbeatManager() const noexcept {
+    return heartbeat_manager_;
+}
+
 bool Master::RegisterReplica(
     ChunkHandle handle,
     ServerId server_id,
@@ -334,30 +345,6 @@ Master::SelectReplicaServers(
     return placement_policy_.SelectReplicas(request);
 }
 
-bool Master::RegisterChunkReplica(
-    ChunkHandle handle,
-    ServerId server_id,
-    bool is_primary) {
-    return RegisterReplica(
-        handle,
-        server_id,
-        is_primary);
-}
-
-bool Master::HasChunkReplica(
-    ChunkHandle handle,
-    ServerId server_id) const {
-    return HasReplica(
-        handle,
-        server_id);
-}
-
-std::optional<ServerId>
-Master::GetChunkPrimary(
-    ChunkHandle handle) const {
-    return GetPrimary(handle);
-}
-
 std::vector<ServerId>
 Master::PlaceChunkReplicas(
     ChunkHandle handle,
@@ -397,6 +384,30 @@ Master::PlaceChunkReplicas(
     return servers;
 }
 
+bool Master::RegisterChunkReplica(
+    ChunkHandle handle,
+    ServerId server_id,
+    bool is_primary) {
+    return RegisterReplica(
+        handle,
+        server_id,
+        is_primary);
+}
+
+bool Master::HasChunkReplica(
+    ChunkHandle handle,
+    ServerId server_id) const {
+    return HasReplica(
+        handle,
+        server_id);
+}
+
+std::optional<ServerId>
+Master::GetChunkPrimary(
+    ChunkHandle handle) const {
+    return GetPrimary(handle);
+}
+
 bool Master::SetChunkPrimary(
     ChunkHandle handle,
     ServerId server_id) {
@@ -422,16 +433,6 @@ Master::AcquireLease(
         return std::nullopt;
     }
 
-    /*
-     * Phase 7 lease acquisition depends on the master's
-     * current replica/primary state. A chunk does not need
-     * to be present in the Phase 3 metadata table for the
-     * lease test or for the lease manager to establish
-     * primary authority.
-     *
-     * If metadata exists, preserve its current chunk
-     * version. Otherwise use the initial GFS chunk version.
-     */
     ChunkVersion version = 1;
 
     const auto chunk =
@@ -491,6 +492,66 @@ bool Master::ExtendLease(
 bool Master::ReleaseLease(
     ChunkHandle handle) {
     return lease_manager_.ReleaseLease(handle);
+}
+
+bool Master::ProcessHeartbeat(
+    ServerId server_id,
+    std::uint64_t timestamp_ms,
+    const std::vector<heartbeat::ReportedChunk>&
+        chunks) {
+    if (!heartbeat_manager_.ProcessHeartbeat(
+            server_id,
+            timestamp_ms,
+            chunks)) {
+        return false;
+    }
+
+    for (const auto& chunk : chunks) {
+        if (chunk.handle == 0 ||
+            chunk.version == 0) {
+            continue;
+        }
+
+        if (!replica_manager_.HasReplica(
+                chunk.handle,
+                server_id)) {
+            replica_manager_.RegisterReplica(
+                chunk.handle,
+                server_id,
+                false);
+        }
+    }
+
+    return true;
+}
+
+bool Master::ProcessHeartbeat(
+    ServerId server_id,
+    std::uint64_t timestamp_ms) {
+    return heartbeat_manager_.ProcessHeartbeat(
+        server_id,
+        timestamp_ms);
+}
+
+bool Master::IsChunkserverAlive(
+    ServerId server_id) const {
+    return heartbeat_manager_.IsServerAlive(
+        server_id);
+}
+
+bool Master::IsChunkserverAlive(
+    ServerId server_id,
+    std::uint64_t now_ms) const {
+    return heartbeat_manager_.IsServerAlive(
+        server_id,
+        now_ms);
+}
+
+std::vector<ServerId>
+Master::DetectFailedChunkservers(
+    std::uint64_t now_ms) {
+    return heartbeat_manager_.DetectFailedServers(
+        now_ms);
 }
 
 }  // namespace gfs::master

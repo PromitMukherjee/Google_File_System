@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "gfs/common/types.hpp"
@@ -211,6 +212,18 @@ public:
     [[nodiscard]] std::vector<ServerId>
     DetectFailedChunkservers(
         std::uint64_t now_ms);
+
+    [[nodiscard]] bool IsStaleReplica(
+        ChunkHandle handle,
+        ServerId server_id) const;
+
+    [[nodiscard]] std::vector<ServerId>
+    GetStaleReplicas(
+        ChunkHandle handle) const;
+
+    [[nodiscard]] std::vector<ChunkHandle>
+    GetStaleChunks(
+        ServerId server_id) const;
 
 private:
     metadata::Metadata metadata_;

@@ -1,5 +1,6 @@
 #include "gfs/master/master.hpp"
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <optional>
@@ -552,6 +553,114 @@ Master::DetectFailedChunkservers(
     std::uint64_t now_ms) {
     return heartbeat_manager_.DetectFailedServers(
         now_ms);
+}
+
+bool Master::IsStaleReplica(
+    ChunkHandle handle,
+    ServerId server_id) const {
+    if (handle == 0 ||
+        server_id == 0) {
+        return false;
+    }
+
+    const auto master_version =
+        metadata_.GetChunkVersion(handle);
+
+    if (!master_version.has_value() ||
+        *master_version == 0) {
+        return false;
+    }
+
+    const auto state =
+        heartbeat_manager_.GetServerState(server_id);
+
+    if (!state.has_value()) {
+        return false;
+    }
+
+    const auto reported_chunks =
+        state->GetReportedChunks();
+
+    const auto it =
+        std::find_if(
+            reported_chunks.begin(),
+            reported_chunks.end(),
+            [handle](const heartbeat::ReportedChunk& chunk) {
+                return chunk.handle == handle;
+            });
+
+    if (it == reported_chunks.end()) {
+        return false;
+    }
+
+    return it->version < *master_version;
+}
+
+std::vector<ServerId>
+Master::GetStaleReplicas(
+    ChunkHandle handle) const {
+    std::vector<ServerId> stale;
+
+    if (handle == 0) {
+        return stale;
+    }
+
+    const auto master_version =
+        metadata_.GetChunkVersion(handle);
+
+    if (!master_version.has_value() ||
+        *master_version == 0) {
+        return stale;
+    }
+
+    const auto replicas =
+        replica_manager_.GetReplicaServers(handle);
+
+    for (const ServerId server_id : replicas) {
+        if (IsStaleReplica(handle, server_id)) {
+            stale.push_back(server_id);
+        }
+    }
+
+    std::sort(
+        stale.begin(),
+        stale.end());
+
+    return stale;
+}
+
+std::vector<ChunkHandle>
+Master::GetStaleChunks(
+    ServerId server_id) const {
+    std::vector<ChunkHandle> stale;
+
+    if (server_id == 0) {
+        return stale;
+    }
+
+    const auto state =
+        heartbeat_manager_.GetServerState(server_id);
+
+    if (!state.has_value()) {
+        return stale;
+    }
+
+    const auto reported_chunks =
+        state->GetReportedChunks();
+
+    for (const auto& reported : reported_chunks) {
+        if (IsStaleReplica(
+                reported.handle,
+                server_id)) {
+            stale.push_back(reported.handle);
+        }
+    }
+
+    std::sort(
+        stale.begin(),
+        stale.end());
+
+    return stale;
 }
 
 }  // namespace gfs::master

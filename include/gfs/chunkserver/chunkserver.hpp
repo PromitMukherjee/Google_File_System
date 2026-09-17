@@ -1,5 +1,6 @@
 #pragma once
 
+#include "gfs/chunkserver/checksum/checksum_manager.hpp"
 #include "gfs/chunkserver/mutation/mutation_manager.hpp"
 #include "gfs/chunkserver/replication/clone_manager.hpp"
 #include "gfs/chunkserver/replication/replica_receiver.hpp"
@@ -10,6 +11,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <shared_mutex>
 #include <string>
 #include <vector>
 
@@ -83,6 +85,12 @@ public:
     [[nodiscard]] const storage::StorageManager&
     GetStorageManager() const noexcept;
 
+    [[nodiscard]] checksum::ChecksumManager&
+    GetChecksumManager() noexcept;
+
+    [[nodiscard]] const checksum::ChecksumManager&
+    GetChecksumManager() const noexcept;
+
     [[nodiscard]] replication::ReplicaSender&
     GetReplicaSender() noexcept;
 
@@ -100,7 +108,9 @@ public:
 
 private:
     ServerId server_id_;
+
     storage::StorageManager storage_manager_;
+    checksum::ChecksumManager checksum_manager_;
 
     mutation::MutationManager mutation_manager_;
 
@@ -112,6 +122,8 @@ private:
 
     std::unique_ptr<replication::CloneManager>
         clone_manager_;
+
+    mutable std::shared_mutex io_mutex_;
 
     bool initialized_ = false;
 };

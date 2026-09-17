@@ -1,6 +1,7 @@
 #include "gfs/chunkserver/chunkserver.hpp"
 
 #include <cstdint>
+#include <mutex>
 #include <utility>
 #include <vector>
 
@@ -11,6 +12,7 @@ Chunkserver::Chunkserver(
     std::string storage_directory)
     : server_id_(server_id),
       storage_manager_(std::move(storage_directory)),
+      checksum_manager_(storage_manager_),
       mutation_manager_(*this) {
 }
 
@@ -20,6 +22,10 @@ bool Chunkserver::Initialize() {
     }
 
     if (!storage_manager_.Initialize()) {
+        return false;
+    }
+
+    if (!checksum_manager_.Initialize()) {
         return false;
     }
 
@@ -54,6 +60,8 @@ bool Chunkserver::CreateChunk(
         return false;
     }
 
+    std::unique_lock lock(io_mutex_);
+
     return storage_manager_.CreateChunk(handle);
 }
 
@@ -63,7 +71,18 @@ bool Chunkserver::OpenChunk(
         return false;
     }
 
-    return storage_manager_.OpenChunk(handle);
+    std::unique_lock lock(io_mutex_);
+
+    if (!storage_manager_.OpenChunk(handle)) {
+        return false;
+    }
+
+    if (!checksum_manager_.HasChecksums(handle) &&
+        storage_manager_.GetChunkSize(handle) != 0) {
+        return checksum_manager_.ComputeChunkChecksums(handle);
+    }
+
+    return true;
 }
 
 bool Chunkserver::DeleteChunk(
@@ -72,9 +91,15 @@ bool Chunkserver::DeleteChunk(
         return false;
     }
 
+    std::unique_lock lock(io_mutex_);
+
     mutation_manager_.ResetChunk(handle);
 
-    return storage_manager_.DeleteChunk(handle);
+    if (!storage_manager_.DeleteChunk(handle)) {
+        return false;
+    }
+
+    return checksum_manager_.DeleteChecksums(handle);
 }
 
 bool Chunkserver::ChunkExists(
@@ -92,6 +117,16 @@ bool Chunkserver::ReadChunk(
     std::size_t length,
     std::vector<std::uint8_t>& data) const {
     if (!initialized_ || handle == 0) {
+        data.clear();
+        return false;
+    }
+
+    std::shared_lock lock(io_mutex_);
+
+    if (!checksum_manager_.VerifyChunkRange(
+            handle,
+            offset,
+            length)) {
         data.clear();
         return false;
     }
@@ -139,10 +174,23 @@ bool Chunkserver::WriteChunk(
         return false;
     }
 
-    return storage_manager_.WriteChunk(
+    std::unique_lock lock(io_mutex_);
+
+    if (!storage_manager_.WriteChunk(
+            handle,
+            offset,
+            data)) {
+        return false;
+    }
+
+    if (data.empty()) {
+        return true;
+    }
+
+    return checksum_manager_.UpdateAfterWrite(
         handle,
         offset,
-        data);
+        data.size());
 }
 
 bool Chunkserver::WriteChunk(
@@ -169,6 +217,8 @@ bool Chunkserver::TruncateChunk(
         return false;
     }
 
+    std::unique_lock lock(io_mutex_);
+
     const auto chunk =
         storage_manager_.GetChunk(handle);
 
@@ -176,7 +226,13 @@ bool Chunkserver::TruncateChunk(
         return false;
     }
 
-    return chunk->Truncate(size);
+    if (!chunk->Truncate(size)) {
+        return false;
+    }
+
+    return checksum_manager_.UpdateAfterTruncate(
+        handle,
+        size);
 }
 
 std::uint64_t Chunkserver::GetChunkSize(
@@ -213,6 +269,16 @@ Chunkserver::GetStorageManager() noexcept {
 const storage::StorageManager&
 Chunkserver::GetStorageManager() const noexcept {
     return storage_manager_;
+}
+
+checksum::ChecksumManager&
+Chunkserver::GetChecksumManager() noexcept {
+    return checksum_manager_;
+}
+
+const checksum::ChecksumManager&
+Chunkserver::GetChecksumManager() const noexcept {
+    return checksum_manager_;
 }
 
 replication::ReplicaSender&

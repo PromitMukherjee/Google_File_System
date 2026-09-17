@@ -209,6 +209,12 @@ add_library(gfs_core
 
     src/master/master.cpp
 
+    src/master/replication/replica_manager.cpp
+    src/master/replication/placement_policy.cpp
+
+    src/chunkserver/checksum/checksum_block.cpp
+    src/chunkserver/checksum/checksum_manager.cpp
+
     src/chunkserver/storage/chunk_storage.cpp
     src/chunkserver/storage/chunk_file.cpp
     src/chunkserver/storage/storage_manager.cpp
@@ -217,6 +223,10 @@ add_library(gfs_core
     src/chunkserver/mutation/mutation_manager.cpp
 
     src/chunkserver/heartbeat/heartbeat_client.cpp
+
+    src/chunkserver/replication/replica_receiver.cpp
+    src/chunkserver/replication/replica_sender.cpp
+    src/chunkserver/replication/clone_manager.cpp
 
     src/chunkserver/chunkserver.cpp
 
@@ -230,13 +240,6 @@ add_library(gfs_core
     src/client/io/writer.cpp
 
     src/client/gfs_client.cpp
-
-    src/master/replication/replica_manager.cpp
-    src/master/replication/placement_policy.cpp
-
-    src/chunkserver/replication/replica_receiver.cpp
-    src/chunkserver/replication/replica_sender.cpp
-    src/chunkserver/replication/clone_manager.cpp
 )
 
 target_include_directories(gfs_core
@@ -279,7 +282,7 @@ target_include_directories(gfs
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${GENERATED_DIR}
-    )
+)
 
 add_executable(gfs_common_test
     tests/common_test.cpp
@@ -351,6 +354,16 @@ target_link_libraries(gfs_phase8_test
         GTest::gtest_main
 )
 
+add_executable(gfs_phase9_test
+    tests/phase9_test.cpp
+)
+
+target_link_libraries(gfs_phase9_test
+    PRIVATE
+        gfs_core
+        GTest::gtest_main
+)
+
 foreach(TEST_TARGET
         gfs_common_test
         gfs_master_test
@@ -358,7 +371,8 @@ foreach(TEST_TARGET
         gfs_client_test
         gfs_replication_test
         gfs_phase7_test
-        gfs_phase8_test)
+        gfs_phase8_test
+        gfs_phase9_test)
     target_include_directories(${TEST_TARGET}
         PRIVATE
             ${CMAKE_CURRENT_SOURCE_DIR}/include

@@ -14,6 +14,19 @@ namespace gfs::master::metadata {
 
 class Metadata {
 public:
+    struct PersistentFile {
+        std::string path;
+        std::uint64_t size = 0;
+        std::uint32_t replication_factor = 3;
+        std::vector<ChunkHandle> chunk_handles;
+    };
+
+    struct PersistentChunk {
+        ChunkHandle handle = 0;
+        ChunkVersion version = 1;
+        std::uint64_t size = 0;
+    };
+
     Metadata() = default;
     ~Metadata() = default;
 
@@ -26,13 +39,15 @@ public:
         const std::string& path,
         std::uint32_t replication_factor = 3);
 
-    bool DeleteFile(const std::string& path);
+    bool DeleteFile(
+        const std::string& path);
 
     bool RenameFile(
         const std::string& source_path,
         const std::string& destination_path);
 
-    bool FileExists(const std::string& path) const;
+    bool FileExists(
+        const std::string& path) const;
 
     std::optional<FileMetadata> GetFile(
         const std::string& path) const;
@@ -43,6 +58,12 @@ public:
 
     std::optional<ChunkHandle> AllocateChunk(
         const std::string& path);
+
+    bool AllocateChunk(
+        const std::string& path,
+        ChunkHandle handle,
+        ChunkVersion version = 1,
+        std::uint64_t size = 0);
 
     bool AddChunkToFile(
         const std::string& path,
@@ -55,9 +76,11 @@ public:
     std::optional<ChunkMetadata> GetChunk(
         ChunkHandle chunk_handle) const;
 
-    bool ChunkExists(ChunkHandle chunk_handle) const;
+    bool ChunkExists(
+        ChunkHandle chunk_handle) const;
 
-    bool DeleteChunk(ChunkHandle chunk_handle);
+    bool DeleteChunk(
+        ChunkHandle chunk_handle);
 
     bool AddReplica(
         ChunkHandle chunk_handle,
@@ -93,6 +116,28 @@ public:
 
     std::size_t FileCount() const;
     std::size_t ChunkCount() const;
+
+    std::vector<PersistentFile>
+    ExportFiles() const;
+
+    std::vector<PersistentChunk>
+    ExportChunks() const;
+
+    void Clear();
+
+    bool RestoreFile(
+        const std::string& path,
+        std::uint64_t size,
+        std::uint32_t replication_factor,
+        const std::vector<ChunkHandle>& chunk_handles);
+
+    bool RestoreChunk(
+        ChunkHandle handle,
+        ChunkVersion version,
+        std::uint64_t size);
+
+    [[nodiscard]] ChunkHandle
+    GetNextChunkHandle() const noexcept;
 
 private:
     ChunkHandle GenerateChunkHandle();

@@ -1,5 +1,6 @@
 #include "gfs/master/metadata/metadata.hpp"
 
+#include <algorithm>
 #include <cstdint>
 #include <optional>
 #include <utility>
@@ -116,10 +117,7 @@ bool Metadata::UpdateFileSize(
 std::optional<ChunkHandle>
 Metadata::AllocateChunk(
     const std::string& path) {
-    const auto file_it =
-        files_.find(path);
-
-    if (file_it == files_.end()) {
+    if (!files_.contains(path)) {
         return std::nullopt;
     }
 
@@ -130,9 +128,35 @@ Metadata::AllocateChunk(
         return std::nullopt;
     }
 
+    if (!AllocateChunk(
+            path,
+            handle,
+            1,
+            0)) {
+        return std::nullopt;
+    }
+
+    return handle;
+}
+
+bool Metadata::AllocateChunk(
+    const std::string& path,
+    ChunkHandle handle,
+    ChunkVersion version,
+    std::uint64_t size) {
+    if (path.empty() ||
+        handle == 0 ||
+        version == 0 ||
+        files_.find(path) == files_.end() ||
+        chunks_.contains(handle)) {
+        return false;
+    }
+
     ChunkMetadata chunk(
         handle,
-        1);
+        version);
+
+    chunk.SetSize(size);
 
     const auto [chunk_it, inserted] =
         chunks_.emplace(
@@ -140,15 +164,23 @@ Metadata::AllocateChunk(
             std::move(chunk));
 
     if (!inserted) {
-        return std::nullopt;
+        return false;
     }
 
-    if (!file_it->second.AddChunk(handle)) {
+    if (!files_.at(path).AddChunk(handle)) {
         chunks_.erase(chunk_it);
-        return std::nullopt;
+        return false;
     }
 
-    return handle;
+    if (handle >= next_chunk_handle_) {
+        next_chunk_handle_ = handle + 1;
+
+        if (next_chunk_handle_ == 0) {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 bool Metadata::AddChunkToFile(
@@ -358,9 +390,144 @@ std::size_t Metadata::ChunkCount() const {
     return chunks_.size();
 }
 
+std::vector<Metadata::PersistentFile>
+Metadata::ExportFiles() const {
+    std::vector<PersistentFile> result;
+    result.reserve(files_.size());
+
+    for (const auto& [path, file] :
+         files_) {
+        result.push_back(
+            PersistentFile{
+                file.GetPath(),
+                file.GetSize(),
+                file.GetReplicationFactor(),
+                file.GetChunkHandles()});
+    }
+
+    std::sort(
+        result.begin(),
+        result.end(),
+        [](const PersistentFile& a,
+           const PersistentFile& b) {
+            return a.path < b.path;
+        });
+
+    return result;
+}
+
+std::vector<Metadata::PersistentChunk>
+Metadata::ExportChunks() const {
+    std::vector<PersistentChunk> result;
+    result.reserve(chunks_.size());
+
+    for (const auto& [handle, chunk] :
+         chunks_) {
+        result.push_back(
+            PersistentChunk{
+                chunk.GetHandle(),
+                chunk.GetVersion(),
+                chunk.GetSize()});
+    }
+
+    std::sort(
+        result.begin(),
+        result.end(),
+        [](const PersistentChunk& a,
+           const PersistentChunk& b) {
+            return a.handle < b.handle;
+        });
+
+    return result;
+}
+
+void Metadata::Clear() {
+    files_.clear();
+    chunks_.clear();
+    next_chunk_handle_ = 1;
+}
+
+bool Metadata::RestoreFile(
+    const std::string& path,
+    std::uint64_t size,
+    std::uint32_t replication_factor,
+    const std::vector<ChunkHandle>& chunk_handles) {
+    if (path.empty() ||
+        files_.contains(path) ||
+        replication_factor == 0) {
+        return false;
+    }
+
+    FileMetadata file(
+        path,
+        replication_factor);
+
+    file.SetSize(size);
+
+    for (const ChunkHandle handle :
+         chunk_handles) {
+        if (handle == 0 ||
+            file.HasChunk(handle)) {
+            return false;
+        }
+
+        if (!file.AddChunk(handle)) {
+            return false;
+        }
+    }
+
+    files_.emplace(
+        path,
+        std::move(file));
+
+    return true;
+}
+
+bool Metadata::RestoreChunk(
+    ChunkHandle handle,
+    ChunkVersion version,
+    std::uint64_t size) {
+    if (handle == 0 ||
+        version == 0 ||
+        chunks_.contains(handle)) {
+        return false;
+    }
+
+    ChunkMetadata chunk(
+        handle,
+        version);
+
+    chunk.SetSize(size);
+
+    const auto [it, inserted] =
+        chunks_.emplace(
+            handle,
+            std::move(chunk));
+
+    if (!inserted) {
+        return false;
+    }
+
+    if (handle >= next_chunk_handle_) {
+        next_chunk_handle_ = handle + 1;
+
+        if (next_chunk_handle_ == 0) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+ChunkHandle Metadata::GetNextChunkHandle()
+    const noexcept {
+    return next_chunk_handle_;
+}
+
 ChunkHandle Metadata::GenerateChunkHandle() {
     while (next_chunk_handle_ != 0 &&
-           chunks_.contains(next_chunk_handle_)) {
+           chunks_.contains(
+               next_chunk_handle_)) {
         ++next_chunk_handle_;
     }
 

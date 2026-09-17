@@ -9,9 +9,12 @@
 #include "gfs/master/replication/replica_manager.hpp"
 #include "gfs/master/replication/re_replication.hpp"
 #include "gfs/master/recovery/recovery_manager.hpp"
+#include "gfs/master/recovery/checkpoint.hpp"
+#include "gfs/master/recovery/operation_log.hpp"
 
 #include <cstddef>
 #include <cstdint>
+#include <filesystem>
 #include <optional>
 #include <string>
 #include <vector>
@@ -21,10 +24,15 @@ namespace gfs::master {
 class Master {
 public:
     explicit Master(
-        std::uint32_t default_replication_factor = 3);
+        std::uint32_t default_replication_factor = 3,
+        std::filesystem::path persistence_directory = {});
 
     Master(const Master&) = delete;
     Master& operator=(const Master&) = delete;
+
+    // ============================================================
+    // FILE OPERATIONS
+    // ============================================================
 
     [[nodiscard]] bool CreateFile(
         const std::string& path,
@@ -46,13 +54,24 @@ public:
     [[nodiscard]] bool DirectoryExists(
         const std::string& path) const;
 
-    [[nodiscard]] std::optional<metadata::FileMetadata> GetFile(
+    [[nodiscard]] std::optional<metadata::FileMetadata>
+    GetFile(
         const std::string& path) const;
 
-    [[nodiscard]] std::optional<metadata::FileMetadata> GetFileInfo(
+    [[nodiscard]] std::optional<metadata::FileMetadata>
+    GetFileInfo(
         const std::string& path) const;
 
-    [[nodiscard]] std::optional<metadata::ChunkMetadata> GetChunkInfo(
+    [[nodiscard]] bool UpdateFileSize(
+        const std::string& path,
+        std::uint64_t size);
+
+    // ============================================================
+    // CHUNK METADATA OPERATIONS
+    // ============================================================
+
+    [[nodiscard]] std::optional<metadata::ChunkMetadata>
+    GetChunkInfo(
         ChunkHandle handle) const;
 
     [[nodiscard]] std::optional<std::uint32_t>
@@ -63,7 +82,12 @@ public:
         ChunkHandle handle,
         ChunkVersion version);
 
-    [[nodiscard]] std::optional<ChunkHandle> AllocateChunk(
+    [[nodiscard]] bool SetChunkSize(
+        ChunkHandle handle,
+        std::uint64_t size);
+
+    [[nodiscard]] std::optional<ChunkHandle>
+    AllocateChunk(
         const std::string& path);
 
     [[nodiscard]] bool AddChunkToFile(
@@ -74,17 +98,26 @@ public:
         const std::string& path,
         ChunkHandle handle);
 
-    [[nodiscard]] std::vector<ChunkHandle> GetFileChunks(
+    [[nodiscard]] std::vector<ChunkHandle>
+    GetFileChunks(
         const std::string& path) const;
 
-    [[nodiscard]] std::optional<std::size_t> GetChunkCount(
+    [[nodiscard]] std::optional<std::size_t>
+    GetChunkCount(
         const std::string& path) const;
 
-    [[nodiscard]] std::size_t ChunkCount() const;
+    [[nodiscard]] std::size_t
+    ChunkCount() const;
 
-    [[nodiscard]] std::size_t NamespaceNodeCount() const;
+    // ============================================================
+    // MASTER / NAMESPACE INFORMATION
+    // ============================================================
 
-    [[nodiscard]] std::size_t FileCount() const;
+    [[nodiscard]] std::size_t
+    NamespaceNodeCount() const;
+
+    [[nodiscard]] std::size_t
+    FileCount() const;
 
     [[nodiscard]] namespace_management::NamespaceManager&
     GetNamespaceManager() noexcept;
@@ -92,11 +125,19 @@ public:
     [[nodiscard]] const namespace_management::NamespaceManager&
     GetNamespaceManager() const noexcept;
 
+    // ============================================================
+    // REPLICA MANAGER
+    // ============================================================
+
     [[nodiscard]] replication::ReplicaManager&
     GetReplicaManager() noexcept;
 
     [[nodiscard]] const replication::ReplicaManager&
     GetReplicaManager() const noexcept;
+
+    // ============================================================
+    // PLACEMENT POLICY
+    // ============================================================
 
     [[nodiscard]] replication::PlacementPolicy&
     GetPlacementPolicy() noexcept;
@@ -104,11 +145,19 @@ public:
     [[nodiscard]] const replication::PlacementPolicy&
     GetPlacementPolicy() const noexcept;
 
+    // ============================================================
+    // LEASE MANAGER
+    // ============================================================
+
     [[nodiscard]] lease::LeaseManager&
     GetLeaseManager() noexcept;
 
     [[nodiscard]] const lease::LeaseManager&
     GetLeaseManager() const noexcept;
+
+    // ============================================================
+    // HEARTBEAT MANAGER
+    // ============================================================
 
     [[nodiscard]] heartbeat::HeartbeatManager&
     GetHeartbeatManager() noexcept;
@@ -116,11 +165,19 @@ public:
     [[nodiscard]] const heartbeat::HeartbeatManager&
     GetHeartbeatManager() const noexcept;
 
+    // ============================================================
+    // RE-REPLICATION MANAGER
+    // ============================================================
+
     [[nodiscard]] replication::ReReplicationManager&
     GetReReplicationManager() noexcept;
 
     [[nodiscard]] const replication::ReReplicationManager&
     GetReReplicationManager() const noexcept;
+
+    // ============================================================
+    // RECOVERY MANAGER
+    // ============================================================
 
     [[nodiscard]] recovery::RecoveryManager&
     GetRecoveryManager() noexcept;
@@ -128,7 +185,32 @@ public:
     [[nodiscard]] const recovery::RecoveryManager&
     GetRecoveryManager() const noexcept;
 
-    [[nodiscard]] bool Initialize();
+    // ============================================================
+    // INITIALIZATION / RECOVERY
+    // ============================================================
+
+    [[nodiscard]] bool
+    Initialize();
+
+    // ============================================================
+    // PHASE 11 — CHECKPOINT / OPERATION LOG
+    // ============================================================
+
+    [[nodiscard]] bool
+    CreateCheckpoint();
+
+    [[nodiscard]] std::uint64_t
+    GetLastOperationSequence() const noexcept;
+
+    [[nodiscard]] const std::filesystem::path&
+    GetPersistenceDirectory() const noexcept;
+
+    [[nodiscard]] const std::filesystem::path&
+    GetOperationLogPath() const noexcept;
+
+    // ============================================================
+    // REPLICA OPERATIONS
+    // ============================================================
 
     [[nodiscard]] bool RegisterChunkReplica(
         ChunkHandle handle,
@@ -140,11 +222,14 @@ public:
         ServerId server_id) const;
 
     [[nodiscard]] std::optional<ServerId>
-    GetChunkPrimary(ChunkHandle handle) const;
+    GetChunkPrimary(
+        ChunkHandle handle) const;
 
-    [[nodiscard]] std::vector<ServerId> PlaceChunkReplicas(
+    [[nodiscard]] std::vector<ServerId>
+    PlaceChunkReplicas(
         ChunkHandle handle,
-        const std::vector<replication::PlacementCandidate>& candidates);
+        const std::vector<
+            replication::PlacementCandidate>& candidates);
 
     [[nodiscard]] bool SetChunkPrimary(
         ChunkHandle handle,
@@ -154,7 +239,8 @@ public:
         ChunkHandle handle,
         ServerId server_id);
 
-    [[nodiscard]] std::vector<ServerId> GetChunkReplicas(
+    [[nodiscard]] std::vector<ServerId>
+    GetChunkReplicas(
         ChunkHandle handle) const;
 
     [[nodiscard]] bool RegisterReplica(
@@ -170,20 +256,27 @@ public:
         ChunkHandle handle,
         ServerId server_id) const;
 
-    [[nodiscard]] std::vector<ServerId> GetReplicaServers(
+    [[nodiscard]] std::vector<ServerId>
+    GetReplicaServers(
         ChunkHandle handle) const;
 
-    [[nodiscard]] std::optional<ServerId> GetPrimary(
+    [[nodiscard]] std::optional<ServerId>
+    GetPrimary(
         ChunkHandle handle) const;
 
     [[nodiscard]] bool SetPrimary(
         ChunkHandle handle,
         ServerId server_id);
 
-    [[nodiscard]] std::vector<ServerId> SelectReplicaServers(
+    [[nodiscard]] std::vector<ServerId>
+    SelectReplicaServers(
         ChunkHandle handle,
-        const std::vector<replication::PlacementCandidate>&
-            candidates) const;
+        const std::vector<
+            replication::PlacementCandidate>& candidates) const;
+
+    // ============================================================
+    // LEASE OPERATIONS
+    // ============================================================
 
     [[nodiscard]] std::optional<lease::Lease>
     AcquireLease(
@@ -213,11 +306,15 @@ public:
     [[nodiscard]] bool ReleaseLease(
         ChunkHandle handle);
 
+    // ============================================================
+    // HEARTBEAT OPERATIONS
+    // ============================================================
+
     [[nodiscard]] bool ProcessHeartbeat(
         ServerId server_id,
         std::uint64_t timestamp_ms,
-        const std::vector<heartbeat::ReportedChunk>&
-            chunks);
+        const std::vector<
+            heartbeat::ReportedChunk>& chunks);
 
     [[nodiscard]] bool ProcessHeartbeat(
         ServerId server_id,
@@ -229,6 +326,10 @@ public:
     [[nodiscard]] bool IsChunkserverAlive(
         ServerId server_id,
         std::uint64_t now_ms) const;
+
+    // ============================================================
+    // FAILURE / STALE REPLICA DETECTION
+    // ============================================================
 
     [[nodiscard]] std::vector<ServerId>
     DetectFailedChunkservers(
@@ -247,14 +348,58 @@ public:
         ServerId server_id) const;
 
 private:
+    // ============================================================
+    // PHASE 11 — RECOVERY
+    // ============================================================
+
+    [[nodiscard]] bool ReplayOperation(
+        const recovery::OperationRecord& record);
+
+    [[nodiscard]] bool AppendOperation(
+        recovery::OperationType type,
+        const std::vector<std::string>& fields);
+
+    // ============================================================
+    // CORE MASTER STATE
+    // ============================================================
+
     metadata::Metadata metadata_;
-    namespace_management::NamespaceManager namespace_manager_;
-    replication::ReplicaManager replica_manager_;
-    replication::PlacementPolicy placement_policy_;
-    lease::LeaseManager lease_manager_;
-    heartbeat::HeartbeatManager heartbeat_manager_;
-    replication::ReReplicationManager re_replication_manager_;
-    recovery::RecoveryManager recovery_manager_;
+
+    namespace_management::NamespaceManager
+        namespace_manager_;
+
+    replication::ReplicaManager
+        replica_manager_;
+
+    replication::PlacementPolicy
+        placement_policy_;
+
+    lease::LeaseManager
+        lease_manager_;
+
+    heartbeat::HeartbeatManager
+        heartbeat_manager_;
+
+    replication::ReReplicationManager
+        re_replication_manager_;
+
+    recovery::RecoveryManager
+        recovery_manager_;
+
+    // ============================================================
+    // PHASE 11 — PERSISTENCE STATE
+    // ============================================================
+
+    std::filesystem::path
+        persistence_directory_;
+
+    recovery::OperationLog
+        operation_log_;
+
+    recovery::Checkpoint
+        checkpoint_;
+
+    bool initialized_ = false;
 };
 
 }  // namespace gfs::master

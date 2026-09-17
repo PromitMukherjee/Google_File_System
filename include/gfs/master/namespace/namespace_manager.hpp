@@ -28,15 +28,26 @@ public:
     NamespaceManager(NamespaceManager&&) = delete;
     NamespaceManager& operator=(NamespaceManager&&) = delete;
 
-    bool Exists(const std::string& path) const;
-    bool IsDirectory(const std::string& path) const;
-    bool IsFile(const std::string& path) const;
+    bool Exists(
+        const std::string& path) const;
 
-    bool CreateDirectory(const std::string& path);
-    bool CreateFile(const std::string& path);
+    bool IsDirectory(
+        const std::string& path) const;
 
-    bool DeleteDirectory(const std::string& path);
-    bool DeleteFile(const std::string& path);
+    bool IsFile(
+        const std::string& path) const;
+
+    bool CreateDirectory(
+        const std::string& path);
+
+    bool CreateFile(
+        const std::string& path);
+
+    bool DeleteDirectory(
+        const std::string& path);
+
+    bool DeleteFile(
+        const std::string& path);
 
     bool Rename(
         const std::string& source_path,
@@ -45,13 +56,26 @@ public:
     std::vector<NodeInfo> ListDirectory(
         const std::string& path) const;
 
-    std::string ParentPath(const std::string& path) const;
-    std::string BaseName(const std::string& path) const;
+    std::string ParentPath(
+        const std::string& path) const;
 
-    static bool IsValidPath(const std::string& path);
-    static bool IsRootPath(const std::string& path);
+    std::string BaseName(
+        const std::string& path) const;
+
+    static bool IsValidPath(
+        const std::string& path);
+
+    static bool IsRootPath(
+        const std::string& path);
 
     std::size_t NodeCount() const;
+
+    std::vector<NodeInfo> ExportNodes() const;
+
+    void Clear();
+
+    bool RestoreNodes(
+        const std::vector<NodeInfo>& nodes);
 
 private:
     struct Node {
@@ -64,10 +88,16 @@ private:
         mutable std::shared_mutex mutex;
     };
 
-    Node* FindNode(const std::string& path);
-    const Node* FindNode(const std::string& path) const;
+    Node* FindNode(
+        const std::string& path);
 
-    Node* FindChild(Node* parent, const std::string& name);
+    const Node* FindNode(
+        const std::string& path) const;
+
+    Node* FindChild(
+        Node* parent,
+        const std::string& name);
+
     const Node* FindChild(
         const Node* parent,
         const std::string& name) const;

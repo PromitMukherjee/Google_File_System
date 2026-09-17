@@ -10,7 +10,9 @@ Chunkserver::Chunkserver(
     ServerId server_id,
     std::string storage_directory)
     : server_id_(server_id),
-      storage_manager_(std::move(storage_directory)) {}
+      storage_manager_(std::move(storage_directory)),
+      mutation_manager_(*this) {
+}
 
 bool Chunkserver::Initialize() {
     if (server_id_ == 0) {
@@ -70,6 +72,8 @@ bool Chunkserver::DeleteChunk(
         return false;
     }
 
+    mutation_manager_.ResetChunk(handle);
+
     return storage_manager_.DeleteChunk(handle);
 }
 
@@ -110,13 +114,18 @@ bool Chunkserver::ReadChunk(
     std::string& data) const {
     std::vector<std::uint8_t> buffer;
 
-    if (!ReadChunk(handle, offset, length, buffer)) {
+    if (!ReadChunk(
+            handle,
+            offset,
+            length,
+            buffer)) {
         data.clear();
         return false;
     }
 
     data.assign(
-        reinterpret_cast<const char*>(buffer.data()),
+        reinterpret_cast<const char*>(
+            buffer.data()),
         buffer.size());
 
     return true;
@@ -141,11 +150,16 @@ bool Chunkserver::WriteChunk(
     std::uint64_t offset,
     const std::string& data) {
     const std::vector<std::uint8_t> buffer(
-        reinterpret_cast<const std::uint8_t*>(data.data()),
-        reinterpret_cast<const std::uint8_t*>(data.data()) +
+        reinterpret_cast<const std::uint8_t*>(
+            data.data()),
+        reinterpret_cast<const std::uint8_t*>(
+            data.data()) +
             data.size());
 
-    return WriteChunk(handle, offset, buffer);
+    return WriteChunk(
+        handle,
+        offset,
+        buffer);
 }
 
 bool Chunkserver::TruncateChunk(
@@ -214,6 +228,16 @@ Chunkserver::GetReplicaReceiver() noexcept {
 replication::CloneManager&
 Chunkserver::GetCloneManager() noexcept {
     return *clone_manager_;
+}
+
+mutation::MutationManager&
+Chunkserver::GetMutationManager() noexcept {
+    return mutation_manager_;
+}
+
+const mutation::MutationManager&
+Chunkserver::GetMutationManager() const noexcept {
+    return mutation_manager_;
 }
 
 }  // namespace gfs::chunkserver

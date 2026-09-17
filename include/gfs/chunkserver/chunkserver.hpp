@@ -1,5 +1,6 @@
 #pragma once
 
+#include "gfs/chunkserver/mutation/mutation_manager.hpp"
 #include "gfs/chunkserver/replication/clone_manager.hpp"
 #include "gfs/chunkserver/replication/replica_receiver.hpp"
 #include "gfs/chunkserver/replication/replica_sender.hpp"
@@ -91,9 +92,17 @@ public:
     [[nodiscard]] replication::CloneManager&
     GetCloneManager() noexcept;
 
+    [[nodiscard]] mutation::MutationManager&
+    GetMutationManager() noexcept;
+
+    [[nodiscard]] const mutation::MutationManager&
+    GetMutationManager() const noexcept;
+
 private:
     ServerId server_id_;
     storage::StorageManager storage_manager_;
+
+    mutation::MutationManager mutation_manager_;
 
     std::unique_ptr<replication::ReplicaSender>
         replica_sender_;

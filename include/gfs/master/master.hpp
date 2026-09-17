@@ -1,6 +1,7 @@
 #pragma once
 
 #include "gfs/common/types.hpp"
+#include "gfs/master/lease/lease_manager.hpp"
 #include "gfs/master/metadata/metadata.hpp"
 #include "gfs/master/namespace/namespace_manager.hpp"
 #include "gfs/master/replication/placement_policy.hpp"
@@ -92,6 +93,12 @@ public:
     [[nodiscard]] const replication::PlacementPolicy&
     GetPlacementPolicy() const noexcept;
 
+    [[nodiscard]] lease::LeaseManager&
+    GetLeaseManager() noexcept;
+
+    [[nodiscard]] const lease::LeaseManager&
+    GetLeaseManager() const noexcept;
+
     [[nodiscard]] bool Initialize();
 
     [[nodiscard]] bool RegisterChunkReplica(
@@ -149,11 +156,40 @@ public:
         const std::vector<replication::PlacementCandidate>&
             candidates) const;
 
+    [[nodiscard]] std::optional<lease::Lease>
+    AcquireLease(
+        ChunkHandle handle,
+        ServerId primary_server_id);
+
+    [[nodiscard]] std::optional<lease::Lease>
+    GetLease(
+        ChunkHandle handle) const;
+
+    [[nodiscard]] bool IsLeaseValid(
+        ChunkHandle handle) const;
+
+    [[nodiscard]] bool IsLeaseValid(
+        ChunkHandle handle,
+        ServerId primary_server_id) const;
+
+    [[nodiscard]] bool ExtendLease(
+        ChunkHandle handle,
+        ServerId primary_server_id);
+
+    [[nodiscard]] bool ExtendLease(
+        ChunkHandle handle,
+        ServerId primary_server_id,
+        std::uint64_t extension_ms);
+
+    [[nodiscard]] bool ReleaseLease(
+        ChunkHandle handle);
+
 private:
     metadata::Metadata metadata_;
     namespace_management::NamespaceManager namespace_manager_;
     replication::ReplicaManager replica_manager_;
     replication::PlacementPolicy placement_policy_;
+    lease::LeaseManager lease_manager_;
 };
 
 }  // namespace gfs::master

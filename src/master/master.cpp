@@ -12,7 +12,9 @@ Master::Master(
     : metadata_(),
       namespace_manager_(),
       replica_manager_(),
-      placement_policy_(default_replication_factor) {}
+      placement_policy_(default_replication_factor),
+      lease_manager_(replica_manager_) {
+}
 
 bool Master::Initialize() {
     return true;
@@ -49,8 +51,16 @@ bool Master::DeleteFile(
         return false;
     }
 
+    const auto chunks =
+        metadata_.GetFileChunks(path);
+
     if (!metadata_.DeleteFile(path)) {
         return false;
+    }
+
+    for (const ChunkHandle handle : chunks) {
+        replica_manager_.RemoveChunk(handle);
+        lease_manager_.ReleaseLease(handle);
     }
 
     return namespace_manager_.DeleteFile(path);
@@ -151,34 +161,6 @@ Master::GetChunkCount(
     return metadata_.GetChunkCount(path);
 }
 
-bool Master::AddReplica(
-    ChunkHandle handle,
-    ServerId server_id) {
-    if (!metadata_.AddReplica(
-            handle,
-            server_id)) {
-        return false;
-    }
-
-    if (!replica_manager_.RegisterReplica(
-            handle,
-            server_id,
-            false)) {
-        metadata_.RemoveReplica(
-            handle,
-            server_id);
-        return false;
-    }
-
-    return true;
-}
-
-std::vector<ServerId>
-Master::GetChunkReplicas(
-    ChunkHandle handle) const {
-    return replica_manager_.GetReplicaServers(handle);
-}
-
 std::size_t Master::ChunkCount() const {
     return metadata_.ChunkCount();
 }
@@ -221,6 +203,16 @@ Master::GetPlacementPolicy() const noexcept {
     return placement_policy_;
 }
 
+lease::LeaseManager&
+Master::GetLeaseManager() noexcept {
+    return lease_manager_;
+}
+
+const lease::LeaseManager&
+Master::GetLeaseManager() const noexcept {
+    return lease_manager_;
+}
+
 bool Master::RegisterReplica(
     ChunkHandle handle,
     ServerId server_id,
@@ -234,9 +226,31 @@ bool Master::RegisterReplica(
 bool Master::RemoveReplica(
     ChunkHandle handle,
     ServerId server_id) {
-    return replica_manager_.RemoveReplica(
-        handle,
-        server_id);
+    const bool removed =
+        replica_manager_.RemoveReplica(
+            handle,
+            server_id);
+
+    if (removed) {
+        metadata_.RemoveReplica(
+            handle,
+            server_id);
+
+        const auto primary =
+            replica_manager_.GetPrimary(handle);
+
+        const auto lease =
+            lease_manager_.GetLease(handle);
+
+        if (lease.has_value() &&
+            (!primary.has_value() ||
+             *primary !=
+                 lease->primary_server_id)) {
+            lease_manager_.ReleaseLease(handle);
+        }
+    }
+
+    return removed;
 }
 
 bool Master::HasReplica(
@@ -262,9 +276,50 @@ Master::GetPrimary(
 bool Master::SetPrimary(
     ChunkHandle handle,
     ServerId server_id) {
-    return replica_manager_.SetPrimary(
-        handle,
-        server_id);
+    if (!replica_manager_.SetPrimary(
+            handle,
+            server_id)) {
+        return false;
+    }
+
+    const auto lease =
+        lease_manager_.GetLease(handle);
+
+    if (lease.has_value() &&
+        lease->primary_server_id !=
+            server_id) {
+        lease_manager_.ReleaseLease(handle);
+    }
+
+    return true;
+}
+
+bool Master::AddReplica(
+    ChunkHandle handle,
+    ServerId server_id) {
+    if (!metadata_.AddReplica(
+            handle,
+            server_id)) {
+        return false;
+    }
+
+    if (!replica_manager_.RegisterReplica(
+            handle,
+            server_id,
+            false)) {
+        metadata_.RemoveReplica(
+            handle,
+            server_id);
+        return false;
+    }
+
+    return true;
+}
+
+std::vector<ServerId>
+Master::GetChunkReplicas(
+    ChunkHandle handle) const {
+    return replica_manager_.GetReplicaServers(handle);
 }
 
 std::vector<ServerId>
@@ -309,7 +364,9 @@ Master::PlaceChunkReplicas(
     const std::vector<replication::PlacementCandidate>&
         candidates) {
     const auto servers =
-        SelectReplicaServers(handle, candidates);
+        SelectReplicaServers(
+            handle,
+            candidates);
 
     if (servers.empty()) {
         return {};
@@ -318,7 +375,8 @@ Master::PlaceChunkReplicas(
     bool primary_registered = false;
 
     for (const ServerId server_id : servers) {
-        const bool is_primary = !primary_registered;
+        const bool is_primary =
+            !primary_registered;
 
         if (!RegisterReplica(
                 handle,
@@ -345,6 +403,94 @@ bool Master::SetChunkPrimary(
     return SetPrimary(
         handle,
         server_id);
+}
+
+std::optional<lease::Lease>
+Master::AcquireLease(
+    ChunkHandle handle,
+    ServerId primary_server_id) {
+    if (handle == 0 ||
+        primary_server_id == 0) {
+        return std::nullopt;
+    }
+
+    const auto primary =
+        replica_manager_.GetPrimary(handle);
+
+    if (!primary.has_value() ||
+        *primary != primary_server_id) {
+        return std::nullopt;
+    }
+
+    /*
+     * Phase 7 lease acquisition depends on the master's
+     * current replica/primary state. A chunk does not need
+     * to be present in the Phase 3 metadata table for the
+     * lease test or for the lease manager to establish
+     * primary authority.
+     *
+     * If metadata exists, preserve its current chunk
+     * version. Otherwise use the initial GFS chunk version.
+     */
+    ChunkVersion version = 1;
+
+    const auto chunk =
+        metadata_.GetChunk(handle);
+
+    if (chunk.has_value()) {
+        version = chunk->version;
+
+        if (version == 0) {
+            version = 1;
+        }
+    }
+
+    return lease_manager_.AcquireLease(
+        handle,
+        primary_server_id,
+        version);
+}
+
+std::optional<lease::Lease>
+Master::GetLease(
+    ChunkHandle handle) const {
+    return lease_manager_.GetLease(handle);
+}
+
+bool Master::IsLeaseValid(
+    ChunkHandle handle) const {
+    return lease_manager_.IsLeaseValid(handle);
+}
+
+bool Master::IsLeaseValid(
+    ChunkHandle handle,
+    ServerId primary_server_id) const {
+    return lease_manager_.IsLeaseValid(
+        handle,
+        primary_server_id);
+}
+
+bool Master::ExtendLease(
+    ChunkHandle handle,
+    ServerId primary_server_id) {
+    return lease_manager_.ExtendLease(
+        handle,
+        primary_server_id);
+}
+
+bool Master::ExtendLease(
+    ChunkHandle handle,
+    ServerId primary_server_id,
+    std::uint64_t extension_ms) {
+    return lease_manager_.ExtendLease(
+        handle,
+        primary_server_id,
+        extension_ms);
+}
+
+bool Master::ReleaseLease(
+    ChunkHandle handle) {
+    return lease_manager_.ReleaseLease(handle);
 }
 
 }  // namespace gfs::master

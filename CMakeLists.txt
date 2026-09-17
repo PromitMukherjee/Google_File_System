@@ -201,11 +201,17 @@ add_library(gfs_core
     src/master/namespace/namespace_manager.cpp
     src/master/namespace/namespace_lock.cpp
 
+    src/master/lease/lease.cpp
+    src/master/lease/lease_manager.cpp
+
     src/master/master.cpp
 
     src/chunkserver/storage/chunk_storage.cpp
     src/chunkserver/storage/chunk_file.cpp
     src/chunkserver/storage/storage_manager.cpp
+
+    src/chunkserver/mutation/mutation.cpp
+    src/chunkserver/mutation/mutation_manager.cpp
 
     src/chunkserver/chunkserver.cpp
 
@@ -320,12 +326,23 @@ target_link_libraries(gfs_replication_test
         GTest::gtest_main
 )
 
+add_executable(gfs_phase7_test
+    tests/phase7_test.cpp
+)
+
+target_link_libraries(gfs_phase7_test
+    PRIVATE
+        gfs_core
+        GTest::gtest_main
+)
+
 foreach(TEST_TARGET
         gfs_common_test
         gfs_master_test
         gfs_chunkserver_test
         gfs_client_test
-        gfs_replication_test)
+        gfs_replication_test
+        gfs_phase7_test)
     target_include_directories(${TEST_TARGET}
         PRIVATE
             ${CMAKE_CURRENT_SOURCE_DIR}/include

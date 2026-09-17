@@ -19,25 +19,18 @@ using gfs::master::Master;
 
 class TemporaryDirectory {
 public:
-    explicit TemporaryDirectory(
-        const std::string& name) {
-        path_ =
-            std::filesystem::temp_directory_path() /
-            (name +
-             std::to_string(
-                 reinterpret_cast<std::uintptr_t>(
-                     this)));
+    explicit TemporaryDirectory(const std::string& name) {
+        path_ = std::filesystem::temp_directory_path() /
+                (name +
+                 std::to_string(
+                     reinterpret_cast<std::uintptr_t>(this)));
 
-        std::filesystem::create_directories(
-            path_);
+        std::filesystem::create_directories(path_);
     }
 
     ~TemporaryDirectory() {
         std::error_code error;
-
-        std::filesystem::remove_all(
-            path_,
-            error);
+        std::filesystem::remove_all(path_, error);
     }
 
     [[nodiscard]] std::string Path() const {
@@ -49,33 +42,15 @@ private:
 };
 
 struct TestChunkservers {
-    TemporaryDirectory directory1{
-        "gfs_phase10_1_"};
+    TemporaryDirectory directory1{"gfs_phase10_1_"};
+    TemporaryDirectory directory2{"gfs_phase10_2_"};
+    TemporaryDirectory directory3{"gfs_phase10_3_"};
+    TemporaryDirectory directory4{"gfs_phase10_4_"};
 
-    TemporaryDirectory directory2{
-        "gfs_phase10_2_"};
-
-    TemporaryDirectory directory3{
-        "gfs_phase10_3_"};
-
-    TemporaryDirectory directory4{
-        "gfs_phase10_4_"};
-
-    Chunkserver server1{
-        1,
-        directory1.Path()};
-
-    Chunkserver server2{
-        2,
-        directory2.Path()};
-
-    Chunkserver server3{
-        3,
-        directory3.Path()};
-
-    Chunkserver server4{
-        4,
-        directory4.Path()};
+    Chunkserver server1{1, directory1.Path()};
+    Chunkserver server2{2, directory2.Path()};
+    Chunkserver server3{3, directory3.Path()};
+    Chunkserver server4{4, directory4.Path()};
 
     bool Initialize() {
         return server1.Initialize() &&
@@ -104,6 +79,10 @@ void CreateChunkInMaster(
     std::uint32_t replication_factor,
     ChunkHandle& handle) {
     ASSERT_TRUE(
+        master.DirectoryExists("/data") ||
+        master.CreateDirectory("/data"));
+
+    ASSERT_TRUE(
         master.CreateFile(
             path,
             replication_factor));
@@ -111,8 +90,7 @@ void CreateChunkInMaster(
     const auto allocated =
         master.AllocateChunk(path);
 
-    ASSERT_TRUE(
-        allocated.has_value());
+    ASSERT_TRUE(allocated.has_value());
 
     handle = *allocated;
 }
@@ -122,8 +100,7 @@ TEST(
     IdentifiesUnderReplicatedChunk) {
     Master master(3);
 
-    ASSERT_TRUE(
-        master.Initialize());
+    ASSERT_TRUE(master.Initialize());
 
     ChunkHandle handle = 0;
 
@@ -135,8 +112,7 @@ TEST(
 
     TestChunkservers servers;
 
-    ASSERT_TRUE(
-        servers.Initialize());
+    ASSERT_TRUE(servers.Initialize());
 
     ASSERT_TRUE(
         master.GetRecoveryManager()
@@ -149,12 +125,10 @@ TEST(
                 servers.server2));
 
     ASSERT_TRUE(
-        servers.server1.CreateChunk(
-            handle));
+        servers.server1.CreateChunk(handle));
 
     ASSERT_TRUE(
-        servers.server2.CreateChunk(
-            handle));
+        servers.server2.CreateChunk(handle));
 
     ASSERT_TRUE(
         master.RegisterChunkReplica(
@@ -198,8 +172,7 @@ TEST(
     FailedReplicaIsExcludedAndReplaced) {
     Master master(3);
 
-    ASSERT_TRUE(
-        master.Initialize());
+    ASSERT_TRUE(master.Initialize());
 
     ChunkHandle handle = 0;
 
@@ -211,8 +184,7 @@ TEST(
 
     TestChunkservers servers;
 
-    ASSERT_TRUE(
-        servers.Initialize());
+    ASSERT_TRUE(servers.Initialize());
 
     ASSERT_TRUE(
         master.GetRecoveryManager()
@@ -295,11 +267,11 @@ TEST(
     master.GetHeartbeatManager()
         .SetFailureTimeoutMs(100);
 
-    EXPECT_TRUE(
+    ASSERT_TRUE(
         master.GetRecoveryManager()
             .RecoverChunk(
                 handle,
-                1000));
+                999));
 
     EXPECT_FALSE(
         master.HasReplica(
@@ -339,8 +311,7 @@ TEST(
     StaleReplicaIsNotCountedAndIsRebuilt) {
     Master master(3);
 
-    ASSERT_TRUE(
-        master.Initialize());
+    ASSERT_TRUE(master.Initialize());
 
     ChunkHandle handle = 0;
 
@@ -380,8 +351,7 @@ TEST(
 
     TestChunkservers servers;
 
-    ASSERT_TRUE(
-        servers.Initialize());
+    ASSERT_TRUE(servers.Initialize());
 
     ASSERT_TRUE(
         master.GetRecoveryManager()
@@ -522,8 +492,7 @@ TEST(
     PrimaryFailurePromotesSurvivingReplica) {
     Master master(3);
 
-    ASSERT_TRUE(
-        master.Initialize());
+    ASSERT_TRUE(master.Initialize());
 
     ChunkHandle handle = 0;
 
@@ -535,8 +504,7 @@ TEST(
 
     TestChunkservers servers;
 
-    ASSERT_TRUE(
-        servers.Initialize());
+    ASSERT_TRUE(servers.Initialize());
 
     for (Chunkserver* server :
          {&servers.server1,
@@ -637,8 +605,7 @@ TEST(
     InsufficientServersFailsGracefully) {
     Master master(3);
 
-    ASSERT_TRUE(
-        master.Initialize());
+    ASSERT_TRUE(master.Initialize());
 
     ChunkHandle handle = 0;
 
@@ -650,8 +617,7 @@ TEST(
 
     TestChunkservers servers;
 
-    ASSERT_TRUE(
-        servers.Initialize());
+    ASSERT_TRUE(servers.Initialize());
 
     ASSERT_TRUE(
         master.GetRecoveryManager()
@@ -687,13 +653,13 @@ TEST(
         master.GetRecoveryManager()
             .RecoverChunk(
                 handle,
-                1200));
+                1050));
 
     EXPECT_EQ(
         master.GetRecoveryManager()
             .GetHealthyReplicaCount(
                 handle,
-                1200),
+                1050),
         1U);
 }
 
@@ -702,8 +668,7 @@ TEST(
     RecoveryDoesNotDuplicateReplicas) {
     Master master(2);
 
-    ASSERT_TRUE(
-        master.Initialize());
+    ASSERT_TRUE(master.Initialize());
 
     ChunkHandle handle = 0;
 
@@ -715,8 +680,7 @@ TEST(
 
     TestChunkservers servers;
 
-    ASSERT_TRUE(
-        servers.Initialize());
+    ASSERT_TRUE(servers.Initialize());
 
     ASSERT_TRUE(
         master.GetRecoveryManager()
@@ -734,8 +698,7 @@ TEST(
                 servers.server3));
 
     ASSERT_TRUE(
-        servers.server1.CreateChunk(
-            handle));
+        servers.server1.CreateChunk(handle));
 
     ASSERT_TRUE(
         servers.server1.WriteChunk(
@@ -744,8 +707,7 @@ TEST(
             "no duplicates"));
 
     ASSERT_TRUE(
-        servers.server2.CreateChunk(
-            handle));
+        servers.server2.CreateChunk(handle));
 
     ASSERT_TRUE(
         servers.server2.WriteChunk(
@@ -799,8 +761,7 @@ TEST(
     UnrelatedChunkIsNotModified) {
     Master master(2);
 
-    ASSERT_TRUE(
-        master.Initialize());
+    ASSERT_TRUE(master.Initialize());
 
     ChunkHandle first = 0;
     ChunkHandle second = 0;
@@ -819,8 +780,7 @@ TEST(
 
     TestChunkservers servers;
 
-    ASSERT_TRUE(
-        servers.Initialize());
+    ASSERT_TRUE(servers.Initialize());
 
     for (Chunkserver* server :
          {&servers.server1,
@@ -833,8 +793,7 @@ TEST(
     }
 
     ASSERT_TRUE(
-        servers.server1.CreateChunk(
-            first));
+        servers.server1.CreateChunk(first));
 
     ASSERT_TRUE(
         servers.server1.WriteChunk(
@@ -843,8 +802,7 @@ TEST(
             "first"));
 
     ASSERT_TRUE(
-        servers.server2.CreateChunk(
-            first));
+        servers.server2.CreateChunk(first));
 
     ASSERT_TRUE(
         servers.server2.WriteChunk(
@@ -853,8 +811,7 @@ TEST(
             "first"));
 
     ASSERT_TRUE(
-        servers.server1.CreateChunk(
-            second));
+        servers.server1.CreateChunk(second));
 
     ASSERT_TRUE(
         servers.server1.WriteChunk(

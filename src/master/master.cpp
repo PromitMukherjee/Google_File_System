@@ -463,10 +463,12 @@ Master::PrepareCopyOnWrite(
         return std::nullopt;
     }
 
+    const std::size_t index =
+        static_cast<std::size_t>(
+            chunk_index);
+
     const ChunkHandle source_handle =
-        chunks[
-            static_cast<std::size_t>(
-                chunk_index)];
+        chunks[index];
 
     if (source_handle == 0) {
         return std::nullopt;
@@ -555,28 +557,33 @@ Master::PrepareCopyOnWrite(
         return std::nullopt;
     }
 
-    if (!metadata_.AddChunkToFile(
+    /*
+     * IMPORTANT:
+     *
+     * Do not use AddChunkToFile() followed by
+     * RemoveChunkFromFile() here.
+     *
+     * COW must replace the exact chunk slot.
+     *
+     * Example:
+     *
+     *   [chunk0, chunk1, chunk2]
+     *
+     * COW on chunk1 must produce:
+     *
+     *   [chunk0, new_chunk, chunk2]
+     *
+     * and never:
+     *
+     *   [chunk0, chunk2, new_chunk]
+     *
+     * This is required for multiple independent
+     * shared chunks and preserves chunk indexes.
+     */
+    if (!metadata_.ReplaceChunkInFile(
             path,
+            chunk_index,
             destination_handle)) {
-        static_cast<void>(
-            replica_manager_.RemoveChunk(
-                destination_handle));
-
-        static_cast<void>(
-            metadata_.DeleteChunk(
-                destination_handle));
-
-        return std::nullopt;
-    }
-
-    if (!metadata_.RemoveChunkFromFile(
-            path,
-            source_handle)) {
-        static_cast<void>(
-            metadata_.RemoveChunkFromFile(
-                path,
-                destination_handle));
-
         static_cast<void>(
             replica_manager_.RemoveChunk(
                 destination_handle));
@@ -596,6 +603,10 @@ Master::PrepareCopyOnWrite(
              std::to_string(destination_handle),
              std::to_string(source_chunk->version),
              std::to_string(source_chunk->size)})) {
+        /*
+         * Restore the original chunk at the exact
+         * same index if persistence fails.
+         */
         static_cast<void>(
             metadata_.ReplaceChunkInFile(
                 path,
@@ -1579,7 +1590,7 @@ bool Master::RemoveReplica(
         if (lease.has_value() &&
             (!primary.has_value() ||
              *primary !=
-                lease->primary_server_id)) {
+                 lease->primary_server_id)) {
             static_cast<void>(
                 lease_manager_.ReleaseLease(
                     handle));

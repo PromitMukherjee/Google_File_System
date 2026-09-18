@@ -24,7 +24,12 @@ Master::Master(
       persistence_directory_(
           std::move(persistence_directory)),
       operation_log_(),
-      checkpoint_() {
+      checkpoint_(),
+      orphan_chunk_manager_(),
+      garbage_collector_(
+          *this,
+          orphan_chunk_manager_),
+      rebalancer_(*this) {
     if (!persistence_directory_.empty()) {
         checkpoint_ =
             recovery::Checkpoint(
@@ -103,6 +108,14 @@ bool Master::DeleteFile(
 
     const auto chunks =
         metadata_.GetFileChunks(path);
+
+    for (const ChunkHandle handle :
+         chunks) {
+        if (metadata_.GetChunkReferenceCount(handle) == 1) {
+            static_cast<void>(
+                orphan_chunk_manager_.MarkOrphan(handle));
+        }
+    }
 
     if (!AppendOperation(
             recovery::OperationType::DeleteFile,
@@ -629,8 +642,7 @@ Master::PrepareCopyOnWrite(
 
 std::size_t Master::GetChunkReferenceCount(
     ChunkHandle handle) const {
-    return metadata_.GetChunkReferenceCount(
-        handle);
+    return metadata_.GetChunkReferenceCount(handle);
 }
 
 std::optional<metadata::ChunkMetadata>
@@ -642,8 +654,7 @@ Master::GetChunkInfo(
 std::optional<std::uint32_t>
 Master::GetChunkReplicationFactor(
     ChunkHandle handle) const {
-    return metadata_.GetChunkReplicationFactor(
-        handle);
+    return metadata_.GetChunkReplicationFactor(handle);
 }
 
 bool Master::SetChunkVersion(
@@ -708,20 +719,6 @@ bool Master::AddChunkToFile(
         return false;
     }
 
-    if (metadata_.GetFile(path)
-            .has_value()) {
-        const auto chunks =
-            metadata_.GetFileChunks(path);
-
-        if (std::find(
-                chunks.begin(),
-                chunks.end(),
-                handle) !=
-            chunks.end()) {
-            return true;
-        }
-    }
-
     if (!AppendOperation(
             recovery::OperationType::AddChunkToFile,
             {path,
@@ -737,18 +734,8 @@ bool Master::AddChunkToFile(
 bool Master::RemoveChunkFromFile(
     const std::string& path,
     ChunkHandle handle) {
-    if (!metadata_.FileExists(path)) {
-        return false;
-    }
-
-    const auto chunks =
-        metadata_.GetFileChunks(path);
-
-    if (std::find(
-            chunks.begin(),
-            chunks.end(),
-            handle) ==
-        chunks.end()) {
+    if (!metadata_.FileExists(path) ||
+        !metadata_.ChunkExists(handle)) {
         return false;
     }
 
@@ -759,47 +746,18 @@ bool Master::RemoveChunkFromFile(
         return false;
     }
 
-    return metadata_.RemoveChunkFromFile(
-        path,
-        handle);
-}
+    const bool removed =
+        metadata_.RemoveChunkFromFile(
+            path,
+            handle);
 
-bool Master::UpdateFileSize(
-    const std::string& path,
-    std::uint64_t size) {
-    if (!metadata_.FileExists(path)) {
-        return false;
+    if (removed &&
+        metadata_.GetChunkReferenceCount(handle) == 0) {
+        static_cast<void>(
+            orphan_chunk_manager_.MarkOrphan(handle));
     }
 
-    if (!AppendOperation(
-            recovery::OperationType::UpdateFileSize,
-            {path,
-             std::to_string(size)})) {
-        return false;
-    }
-
-    return metadata_.UpdateFileSize(
-        path,
-        size);
-}
-
-bool Master::SetChunkSize(
-    ChunkHandle handle,
-    std::uint64_t size) {
-    if (!metadata_.ChunkExists(handle)) {
-        return false;
-    }
-
-    if (!AppendOperation(
-            recovery::OperationType::SetChunkSize,
-            {std::to_string(handle),
-             std::to_string(size)})) {
-        return false;
-    }
-
-    return metadata_.SetChunkSize(
-        handle,
-        size);
+    return removed;
 }
 
 std::vector<ChunkHandle>
@@ -816,6 +774,92 @@ Master::GetChunkCount(
 
 std::size_t Master::ChunkCount() const {
     return metadata_.ChunkCount();
+}
+
+metadata::Metadata&
+Master::GetMetadata() noexcept {
+    return metadata_;
+}
+
+const metadata::Metadata&
+Master::GetMetadata() const noexcept {
+    return metadata_;
+}
+
+garbage_collection::OrphanChunkManager&
+Master::GetOrphanChunkManager() noexcept {
+    return orphan_chunk_manager_;
+}
+
+const garbage_collection::OrphanChunkManager&
+Master::GetOrphanChunkManager() const noexcept {
+    return orphan_chunk_manager_;
+}
+
+garbage_collection::GarbageCollector&
+Master::GetGarbageCollector() noexcept {
+    return garbage_collector_;
+}
+
+const garbage_collection::GarbageCollector&
+Master::GetGarbageCollector() const noexcept {
+    return garbage_collector_;
+}
+
+bool Master::GarbageCollectChunk(
+    ChunkHandle handle) {
+    if (handle == 0 ||
+        metadata_.GetChunkReferenceCount(handle) != 0) {
+        return false;
+    }
+
+    if (!metadata_.ChunkExists(handle)) {
+        static_cast<void>(
+            orphan_chunk_manager_.RemoveOrphan(handle));
+        return true;
+    }
+
+    if (!AppendOperation(
+            recovery::OperationType::DeleteChunk,
+            {std::to_string(handle)})) {
+        return false;
+    }
+
+    if (!re_replication_manager_.DeleteChunkFromChunkservers(
+            handle)) {
+        return false;
+    }
+
+    static_cast<void>(
+        replica_manager_.RemoveChunk(handle));
+
+    static_cast<void>(
+        lease_manager_.ReleaseLease(handle));
+
+    if (!metadata_.DeleteChunk(handle)) {
+        return false;
+    }
+
+    static_cast<void>(
+        orphan_chunk_manager_.RemoveOrphan(handle));
+
+    return true;
+}
+
+std::vector<ChunkHandle>
+Master::GetAllChunkHandles() const {
+    const auto chunks =
+        metadata_.ExportChunks();
+
+    std::vector<ChunkHandle> handles;
+    handles.reserve(chunks.size());
+
+    for (const auto& chunk :
+         chunks) {
+        handles.push_back(chunk.handle);
+    }
+
+    return handles;
 }
 
 std::size_t Master::NamespaceNodeCount() const {
@@ -950,6 +994,7 @@ bool Master::Initialize() {
     }
 
     replica_manager_.Clear();
+    orphan_chunk_manager_.Clear();
 
     initialized_ = true;
     return true;
@@ -1174,7 +1219,8 @@ bool Master::ReplayOperation(
             metadata_.FileExists(fields[0]);
 
         const bool namespace_exists =
-            namespace_manager_.IsFile(fields[0]);
+            namespace_manager_.IsFile(
+                fields[0]);
 
         if (!metadata_exists &&
             !namespace_exists) {
@@ -1201,37 +1247,20 @@ bool Master::ReplayOperation(
             return false;
         }
 
-        const std::string& source =
-            fields[0];
-
-        const std::string& destination =
-            fields[1];
-
-        if (!namespace_manager_.Exists(source) &&
-            namespace_manager_.IsFile(destination) &&
-            metadata_.FileExists(destination)) {
-            return true;
-        }
-
-        if (!namespace_manager_.IsFile(source) ||
-            namespace_manager_.Exists(destination) ||
-            !metadata_.FileExists(source)) {
+        if (!namespace_manager_.IsFile(
+                fields[0])) {
             return false;
         }
 
         if (!namespace_manager_.Rename(
-                source,
-                destination)) {
+                fields[0],
+                fields[1])) {
             return false;
         }
 
-        if (!metadata_.RenameFile(
-                source,
-                destination)) {
-            return false;
-        }
-
-        return true;
+        return metadata_.RenameFile(
+            fields[0],
+            fields[1]);
     }
 
     case recovery::OperationType::AllocateChunk: {
@@ -1330,6 +1359,12 @@ bool Master::ReplayOperation(
             return false;
         }
 
+        if (!metadata_.ChunkExists(
+                static_cast<ChunkHandle>(
+                    handle))) {
+            return false;
+        }
+
         const auto chunks =
             metadata_.GetFileChunks(
                 fields[0]);
@@ -1338,8 +1373,7 @@ bool Master::ReplayOperation(
                 chunks.begin(),
                 chunks.end(),
                 static_cast<ChunkHandle>(
-                    handle)) !=
-            chunks.end()) {
+                    handle)) != chunks.end()) {
             return true;
         }
 
@@ -1349,7 +1383,8 @@ bool Master::ReplayOperation(
                 handle));
     }
 
-    case recovery::OperationType::RemoveChunkFromFile: {
+    case recovery::OperationType::
+        RemoveChunkFromFile: {
         if (fields.size() != 2) {
             return false;
         }
@@ -1371,8 +1406,7 @@ bool Master::ReplayOperation(
                 chunks.begin(),
                 chunks.end(),
                 static_cast<ChunkHandle>(
-                    handle)) ==
-            chunks.end()) {
+                    handle)) == chunks.end()) {
             return true;
         }
 
@@ -1659,47 +1693,22 @@ std::optional<lease::Lease>
 Master::AcquireLease(
     ChunkHandle handle,
     ServerId primary_server_id) {
-    if (handle == 0 ||
-        primary_server_id == 0) {
-        return std::nullopt;
-    }
-
-    const auto primary =
-        replica_manager_.GetPrimary(handle);
-
-    if (!primary.has_value() ||
-        *primary != primary_server_id) {
-        return std::nullopt;
-    }
-
-    ChunkVersion version = 1;
-
-    const auto chunk =
-        metadata_.GetChunk(handle);
-
-    if (chunk.has_value()) {
-        version = chunk->version;
-
-        if (version == 0) {
-            version = 1;
-        }
-    }
-
     return lease_manager_.AcquireLease(
         handle,
-        primary_server_id,
-        version);
+        primary_server_id);
 }
 
 std::optional<lease::Lease>
 Master::GetLease(
     ChunkHandle handle) const {
-    return lease_manager_.GetLease(handle);
+    return lease_manager_.GetLease(
+        handle);
 }
 
 bool Master::IsLeaseValid(
     ChunkHandle handle) const {
-    return lease_manager_.IsLeaseValid(handle);
+    return lease_manager_.IsLeaseValid(
+        handle);
 }
 
 bool Master::IsLeaseValid(
@@ -1730,7 +1739,8 @@ bool Master::ExtendLease(
 
 bool Master::ReleaseLease(
     ChunkHandle handle) {
-    return lease_manager_.ReleaseLease(handle);
+    return lease_manager_.ReleaseLease(
+        handle);
 }
 
 bool Master::ProcessHeartbeat(
@@ -1910,6 +1920,16 @@ Master::GetStaleChunks(
         stale.end());
 
     return stale;
+}
+
+replication::Rebalancer&
+Master::GetRebalancer() noexcept {
+    return rebalancer_;
+}
+
+const replication::Rebalancer&
+Master::GetRebalancer() const noexcept {
+    return rebalancer_;
 }
 
 }  // namespace gfs::master

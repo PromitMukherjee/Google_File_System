@@ -366,6 +366,21 @@ add_library(
     src/master/recovery/checkpoint.cpp
 
     # --------------------------------------------------------
+    # MASTER — GARBAGE COLLECTION
+    # Phase 14
+    # --------------------------------------------------------
+
+    src/master/garbage_collection/orphan_chunk_manager.cpp
+    src/master/garbage_collection/garbage_collector.cpp
+
+    # --------------------------------------------------------
+    # MASTER — REPLICATION REBALANCING
+    # Phase 14
+    # --------------------------------------------------------
+
+    src/master/replication/rebalancer.cpp
+
+    # --------------------------------------------------------
     # CHUNKSERVER — CHECKSUM
     # --------------------------------------------------------
 
@@ -737,6 +752,25 @@ target_link_libraries(
 )
 
 # ============================================================
+# PHASE 14 TEST
+# Garbage Collection + Rebalancing
+# ============================================================
+
+add_executable(
+    gfs_phase14_test
+
+    tests/phase14_test.cpp
+)
+
+target_link_libraries(
+    gfs_phase14_test
+    PRIVATE
+
+        gfs_core
+        GTest::gtest_main
+)
+
+# ============================================================
 # TEST CONFIGURATION
 # ============================================================
 
@@ -755,6 +789,7 @@ foreach(
         gfs_phase11_test
         gfs_phase12_test
         gfs_phase13_test
+        gfs_phase14_test
 )
 
     target_include_directories(

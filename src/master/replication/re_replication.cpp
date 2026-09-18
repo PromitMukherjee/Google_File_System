@@ -8,10 +8,12 @@
 #include <mutex>
 #include <unordered_set>
 #include <utility>
+#include <vector>
 
 namespace gfs::master::replication {
 
-ReReplicationManager::ReReplicationManager(Master& master)
+ReReplicationManager::ReReplicationManager(
+    Master& master)
     : master_(master) {
 }
 
@@ -61,7 +63,8 @@ bool ReReplicationManager::HasChunkserver(
 }
 
 std::size_t
-ReReplicationManager::RegisteredChunkserverCount() const {
+ReReplicationManager::RegisteredChunkserverCount()
+    const {
     std::shared_lock lock(mutex_);
 
     return chunkservers_.size();
@@ -71,7 +74,8 @@ std::uint32_t
 ReReplicationManager::GetDesiredReplicationFactor(
     ChunkHandle handle) const {
     const auto factor =
-        master_.GetChunkReplicationFactor(handle);
+        master_.GetChunkReplicationFactor(
+            handle);
 
     if (factor.has_value() &&
         *factor != 0) {
@@ -88,11 +92,14 @@ ReReplicationManager::GetDesiredReplicationFactor(
 
     if (configured >
         static_cast<std::size_t>(
-            std::numeric_limits<std::uint32_t>::max())) {
-        return std::numeric_limits<std::uint32_t>::max();
+            std::numeric_limits<
+                std::uint32_t>::max())) {
+        return std::numeric_limits<
+            std::uint32_t>::max();
     }
 
-    return static_cast<std::uint32_t>(configured);
+    return static_cast<std::uint32_t>(
+        configured);
 }
 
 bool ReReplicationManager::IsHealthyCurrentReplica(
@@ -136,9 +143,11 @@ ReReplicationManager::GetHealthyCurrentReplicas(
     const auto replicas =
         master_.GetReplicaServers(handle);
 
-    healthy.reserve(replicas.size());
+    healthy.reserve(
+        replicas.size());
 
-    for (const ServerId server_id : replicas) {
+    for (const ServerId server_id :
+         replicas) {
         if (IsHealthyCurrentReplica(
                 handle,
                 server_id,
@@ -174,8 +183,7 @@ bool ReReplicationManager::NeedsReReplication(
 
     return GetHealthyReplicaCount(
                handle,
-               now_ms) <
-           desired;
+               now_ms) < desired;
 }
 
 std::optional<ServerId>
@@ -201,7 +209,8 @@ ReReplicationManager::FindRecoverySource(
         return primary;
     }
 
-    for (const auto& replica : replicas) {
+    for (const auto& replica :
+         replicas) {
         if (IsHealthyCurrentReplica(
                 handle,
                 replica.server_id,
@@ -217,7 +226,8 @@ std::vector<ServerId>
 ReReplicationManager::GetRecoveryDestinations(
     ChunkHandle handle,
     std::uint64_t now_ms) const {
-    std::vector<ServerId> destinations;
+    std::vector<ServerId>
+        destinations;
 
     if (!NeedsReReplication(
             handle,
@@ -247,15 +257,17 @@ ReReplicationManager::GetRecoveryDestinations(
     const auto stale =
         master_.GetStaleReplicas(handle);
 
-    std::unordered_set<ServerId> excluded(
-        replicas.begin(),
-        replicas.end());
+    std::unordered_set<ServerId>
+        excluded(
+            replicas.begin(),
+            replicas.end());
 
     excluded.insert(
         stale.begin(),
         stale.end());
 
-    std::vector<PlacementCandidate> candidates;
+    std::vector<PlacementCandidate>
+        candidates;
 
     const auto live_servers =
         master_.GetHeartbeatManager()
@@ -285,7 +297,8 @@ ReReplicationManager::GetRecoveryDestinations(
             PlacementCandidate{
                 server_id,
                 master_.GetReplicaManager()
-                    .GetChunksForServer(server_id)
+                    .GetChunksForServer(
+                        server_id)
                     .size()});
     }
 
@@ -297,7 +310,8 @@ ReReplicationManager::GetRecoveryDestinations(
 
     request.handle = handle;
     request.replication_factor = needed;
-    request.candidates = std::move(candidates);
+    request.candidates =
+        std::move(candidates);
 
     return master_.GetPlacementPolicy()
         .SelectReplicas(request);
@@ -310,15 +324,18 @@ bool ReReplicationManager::TransferReplica(
     if (handle == 0 ||
         source_server_id == 0 ||
         destination_server_id == 0 ||
-        source_server_id == destination_server_id) {
+        source_server_id ==
+            destination_server_id) {
         return false;
     }
 
     auto* source =
-        GetChunkserver(source_server_id);
+        GetChunkserver(
+            source_server_id);
 
     auto* destination =
-        GetChunkserver(destination_server_id);
+        GetChunkserver(
+            destination_server_id);
 
     if (source == nullptr ||
         destination == nullptr ||
@@ -346,6 +363,55 @@ bool ReReplicationManager::TransferReplica(
         });
 }
 
+bool ReReplicationManager::
+DeleteChunkFromChunkservers(
+    ChunkHandle handle) {
+    if (handle == 0) {
+        return false;
+    }
+
+    std::vector<
+        chunkserver::Chunkserver*> servers;
+
+    {
+        std::shared_lock lock(mutex_);
+
+        servers.reserve(
+            chunkservers_.size());
+
+        for (const auto& [
+                 server_id,
+                 server] :
+             chunkservers_) {
+            static_cast<void>(
+                server_id);
+
+            if (server != nullptr) {
+                servers.push_back(server);
+            }
+        }
+    }
+
+    std::sort(
+        servers.begin(),
+        servers.end(),
+        [](const auto* lhs,
+           const auto* rhs) {
+            return lhs->GetServerId() <
+                   rhs->GetServerId();
+        });
+
+    for (auto* server :
+         servers) {
+        if (server->ChunkExists(handle) &&
+            !server->DeleteChunk(handle)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 bool ReReplicationManager::RecoverChunk(
     ChunkHandle handle,
     std::uint64_t now_ms) {
@@ -360,7 +426,8 @@ bool ReReplicationManager::RecoverChunk(
     const auto replicas =
         master_.GetReplicaServers(handle);
 
-    for (const ServerId server_id : replicas) {
+    for (const ServerId server_id :
+         replicas) {
         if (!master_.IsChunkserverAlive(
                 server_id,
                 now_ms)) {
@@ -377,7 +444,8 @@ bool ReReplicationManager::RecoverChunk(
             now_ms);
 
     if (healthy.empty()) {
-        for (const ServerId server_id : stale) {
+        for (const ServerId server_id :
+             stale) {
             static_cast<void>(
                 master_.RemoveReplica(
                     handle,
@@ -405,7 +473,8 @@ bool ReReplicationManager::RecoverChunk(
     if (!NeedsReReplication(
             handle,
             now_ms)) {
-        for (const ServerId server_id : stale) {
+        for (const ServerId server_id :
+             stale) {
             static_cast<void>(
                 master_.RemoveReplica(
                     handle,
@@ -421,7 +490,8 @@ bool ReReplicationManager::RecoverChunk(
             now_ms);
 
     if (!source.has_value()) {
-        for (const ServerId server_id : stale) {
+        for (const ServerId server_id :
+             stale) {
             static_cast<void>(
                 master_.RemoveReplica(
                     handle,
@@ -436,7 +506,8 @@ bool ReReplicationManager::RecoverChunk(
             handle,
             now_ms);
 
-    for (const ServerId server_id : stale) {
+    for (const ServerId server_id :
+         stale) {
         static_cast<void>(
             master_.RemoveReplica(
                 handle,
@@ -455,7 +526,8 @@ bool ReReplicationManager::RecoverChunk(
                 handle,
                 now_ms) >=
             static_cast<std::size_t>(
-                GetDesiredReplicationFactor(handle))) {
+                GetDesiredReplicationFactor(
+                    handle))) {
             break;
         }
 
@@ -489,12 +561,15 @@ bool ReReplicationManager::RecoverChunk(
 }
 
 std::vector<ChunkHandle>
-ReReplicationManager::RecoverFailedChunkservers(
+ReReplicationManager::
+RecoverFailedChunkservers(
     std::uint64_t now_ms) {
     static_cast<void>(
-        master_.DetectFailedChunkservers(now_ms));
+        master_.DetectFailedChunkservers(
+            now_ms));
 
-    std::unordered_set<ChunkHandle> affected_set;
+    std::unordered_set<ChunkHandle>
+        affected_set;
 
     const auto failed =
         master_.GetHeartbeatManager()
@@ -504,22 +579,25 @@ ReReplicationManager::RecoverFailedChunkservers(
          failed) {
         const auto chunks =
             master_.GetReplicaManager()
-                .GetChunksForServer(server_id);
+                .GetChunksForServer(
+                    server_id);
 
         affected_set.insert(
             chunks.begin(),
             chunks.end());
     }
 
-    std::vector<ChunkHandle> affected(
-        affected_set.begin(),
-        affected_set.end());
+    std::vector<ChunkHandle>
+        affected(
+            affected_set.begin(),
+            affected_set.end());
 
     std::sort(
         affected.begin(),
         affected.end());
 
-    std::vector<ChunkHandle> recovered;
+    std::vector<ChunkHandle>
+        recovered;
 
     for (const ChunkHandle handle :
          affected) {
@@ -536,48 +614,18 @@ ReReplicationManager::RecoverFailedChunkservers(
 std::vector<ChunkHandle>
 ReReplicationManager::RecoverAll(
     std::uint64_t now_ms) {
-    static_cast<void>(
-        master_.DetectFailedChunkservers(now_ms));
+    const auto handles =
+        master_.GetAllChunkHandles();
 
-    std::unordered_set<ChunkHandle> candidates;
+    std::vector<ChunkHandle>
+        recovered;
 
     for (const ChunkHandle handle :
-         master_.GetReplicaManager()
-             .GetAllChunks()) {
+         handles) {
         if (NeedsReReplication(
                 handle,
-                now_ms) ||
-            !master_.GetStaleReplicas(handle)
-                 .empty()) {
-            candidates.insert(handle);
-        }
-    }
-
-    for (const ServerId server_id :
-         master_.GetHeartbeatManager()
-             .GetFailedServers()) {
-        const auto chunks =
-            master_.GetReplicaManager()
-                .GetChunksForServer(server_id);
-
-        candidates.insert(
-            chunks.begin(),
-            chunks.end());
-    }
-
-    std::vector<ChunkHandle> ordered(
-        candidates.begin(),
-        candidates.end());
-
-    std::sort(
-        ordered.begin(),
-        ordered.end());
-
-    std::vector<ChunkHandle> recovered;
-
-    for (const ChunkHandle handle :
-         ordered) {
-        if (RecoverChunk(
+                now_ms) &&
+            RecoverChunk(
                 handle,
                 now_ms)) {
             recovered.push_back(handle);

@@ -11,6 +11,9 @@
 #include "gfs/master/recovery/recovery_manager.hpp"
 #include "gfs/master/recovery/checkpoint.hpp"
 #include "gfs/master/recovery/operation_log.hpp"
+#include "gfs/master/garbage_collection/orphan_chunk_manager.hpp"
+#include "gfs/master/garbage_collection/garbage_collector.hpp"
+#include "gfs/master/replication/rebalancer.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -133,6 +136,44 @@ public:
 
     [[nodiscard]] std::size_t
     ChunkCount() const;
+
+    // ============================================================
+    // PHASE 14 — GARBAGE COLLECTION
+    // ============================================================
+
+    [[nodiscard]] metadata::Metadata&
+    GetMetadata() noexcept;
+
+    [[nodiscard]] const metadata::Metadata&
+    GetMetadata() const noexcept;
+
+    [[nodiscard]] garbage_collection::OrphanChunkManager&
+    GetOrphanChunkManager() noexcept;
+
+    [[nodiscard]] const garbage_collection::OrphanChunkManager&
+    GetOrphanChunkManager() const noexcept;
+
+    [[nodiscard]] garbage_collection::GarbageCollector&
+    GetGarbageCollector() noexcept;
+
+    [[nodiscard]] const garbage_collection::GarbageCollector&
+    GetGarbageCollector() const noexcept;
+
+    [[nodiscard]] bool
+    GarbageCollectChunk(ChunkHandle handle);
+
+    [[nodiscard]] std::vector<ChunkHandle>
+    GetAllChunkHandles() const;
+
+    // ============================================================
+    // PHASE 14 — REBALANCING
+    // ============================================================
+
+    [[nodiscard]] replication::Rebalancer&
+    GetRebalancer() noexcept;
+
+    [[nodiscard]] const replication::Rebalancer&
+    GetRebalancer() const noexcept;
 
     // ============================================================
     // MASTER / NAMESPACE INFORMATION
@@ -431,7 +472,18 @@ private:
     recovery::Checkpoint
         checkpoint_;
 
-    bool initialized_ = false;
+    // ============================================================
+    // PHASE 14 — GARBAGE COLLECTION / REBALANCING
+    // ============================================================
+
+    garbage_collection::OrphanChunkManager
+        orphan_chunk_manager_;
+
+    garbage_collection::GarbageCollector
+        garbage_collector_;
+
+    replication::Rebalancer
+        rebalancer_;
 };
 
 }  // namespace gfs::master

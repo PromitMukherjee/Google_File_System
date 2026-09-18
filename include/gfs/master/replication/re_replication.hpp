@@ -21,10 +21,14 @@ namespace replication {
 
 class ReReplicationManager {
 public:
-    explicit ReReplicationManager(Master& master);
+    explicit ReReplicationManager(
+        Master& master);
 
-    ReReplicationManager(const ReReplicationManager&) = delete;
-    ReReplicationManager& operator=(const ReReplicationManager&) = delete;
+    ReReplicationManager(
+        const ReReplicationManager&) = delete;
+
+    ReReplicationManager& operator=(
+        const ReReplicationManager&) = delete;
 
     [[nodiscard]] bool RegisterChunkserver(
         chunkserver::Chunkserver& chunkserver);
@@ -35,9 +39,11 @@ public:
     [[nodiscard]] bool HasChunkserver(
         ServerId server_id) const;
 
-    [[nodiscard]] std::size_t RegisteredChunkserverCount() const;
+    [[nodiscard]] std::size_t
+    RegisteredChunkserverCount() const;
 
-    [[nodiscard]] std::size_t GetHealthyReplicaCount(
+    [[nodiscard]] std::size_t
+    GetHealthyReplicaCount(
         ChunkHandle handle,
         std::uint64_t now_ms) const;
 
@@ -67,6 +73,14 @@ public:
         ChunkHandle handle,
         std::uint64_t now_ms) const;
 
+    [[nodiscard]] bool DeleteChunkFromChunkservers(
+        ChunkHandle handle);
+
+    [[nodiscard]] bool TransferReplica(
+        ChunkHandle handle,
+        ServerId source_server_id,
+        ServerId destination_server_id) const;
+
 private:
     [[nodiscard]] std::uint32_t
     GetDesiredReplicationFactor(
@@ -82,11 +96,6 @@ private:
         ChunkHandle handle,
         std::uint64_t now_ms) const;
 
-    [[nodiscard]] bool TransferReplica(
-        ChunkHandle handle,
-        ServerId source_server_id,
-        ServerId destination_server_id) const;
-
     [[nodiscard]] chunkserver::Chunkserver*
     GetChunkserver(
         ServerId server_id) const;
@@ -94,6 +103,7 @@ private:
     Master& master_;
 
     mutable std::shared_mutex mutex_;
+
     std::unordered_map<
         ServerId,
         chunkserver::Chunkserver*> chunkservers_;

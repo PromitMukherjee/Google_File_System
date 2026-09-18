@@ -92,6 +92,11 @@ TEST_F(
     ASSERT_TRUE(handle.has_value());
 
     ASSERT_TRUE(
+        harness.SendHeartbeat(2, 30000));
+    ASSERT_TRUE(
+        harness.SendHeartbeat(3, 30000));
+
+    ASSERT_TRUE(
         harness.StopChunkserver(1));
 
     EXPECT_FALSE(
@@ -145,6 +150,11 @@ TEST_F(
         harness.AllocateChunk("/file");
 
     ASSERT_TRUE(handle.has_value());
+
+    ASSERT_TRUE(
+        harness.SendHeartbeat(2, 30000));
+    ASSERT_TRUE(
+        harness.SendHeartbeat(3, 30000));
 
     ASSERT_TRUE(
         harness.StopChunkserver(1));
@@ -486,6 +496,11 @@ TEST_F(
             .has_value());
 
     ASSERT_TRUE(
+        harness.SendHeartbeat(2, 30000));
+    ASSERT_TRUE(
+        harness.SendHeartbeat(3, 30000));
+
+    ASSERT_TRUE(
         harness.StopChunkserver(1));
 
     EXPECT_TRUE(
@@ -503,9 +518,18 @@ TEST_F(
 
     EXPECT_EQ(*primary, 2U);
 
+    ASSERT_TRUE(
+        harness.GetMaster()
+            .AcquireLease(
+                *handle,
+                *primary)
+            .has_value());
+
     EXPECT_TRUE(
         harness.GetMaster()
-            .IsLeaseValid(*handle, 2));
+            .IsLeaseValid(
+                *handle,
+                *primary));
 }
 
 TEST_F(

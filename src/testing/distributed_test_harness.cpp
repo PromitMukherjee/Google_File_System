@@ -131,8 +131,15 @@ bool DistributedTestHarness::StopChunkserver(
 
 bool DistributedTestHarness::RestartChunkserver(
     ServerId server_id) {
-    if (server_id == 0 ||
-        chunkservers_.contains(server_id)) {
+    if (server_id == 0) {
+        return false;
+    }
+
+    const auto existing =
+        chunkservers_.find(server_id);
+
+    if (existing != chunkservers_.end() &&
+        existing->second != nullptr) {
         return false;
     }
 
@@ -282,6 +289,8 @@ bool DistributedTestHarness::WriteChunk(
         return false;
     }
 
+    bool wrote_replica = false;
+
     for (const ServerId server_id :
          replicas) {
         if (failure_injector_.ShouldFail(
@@ -304,24 +313,31 @@ bool DistributedTestHarness::WriteChunk(
                 handle,
                 offset,
                 data)) {
-            const auto end =
-                offset +
-                static_cast<std::uint64_t>(
-                    data.size());
-
-            static_cast<void>(
-                master_.SetChunkSize(
-                    handle,
-                    std::max(
-                        master_.GetChunkInfo(handle)
-                            ->GetSize(),
-                        end)));
-
-            return true;
+            wrote_replica = true;
         }
     }
 
-    return false;
+    if (!wrote_replica) {
+        return false;
+    }
+
+    const auto chunk =
+        master_.GetChunkInfo(handle);
+
+    if (!chunk.has_value()) {
+        return false;
+    }
+
+    const auto end =
+        offset +
+        static_cast<std::uint64_t>(
+            data.size());
+
+    return master_.SetChunkSize(
+        handle,
+        std::max(
+            chunk->GetSize(),
+            end));
 }
 
 bool DistributedTestHarness::ReadChunk(

@@ -105,6 +105,17 @@ private:
         ChunkHandle,
         std::uint64_t>
         last_applied_mutation_ids_;
+
+    // A primary mutation is applied locally before it is
+    // propagated.  If propagation fails, the mutation may
+    // already exist on the primary while its replicas have
+    // not confirmed it.  Retain that mutation so a subsequent
+    // record-append retry can first retry propagation of the
+    // outstanding mutation before issuing the new mutation.
+    std::unordered_map<
+        ChunkHandle,
+        Mutation>
+        pending_propagations_;
 };
 
 }  // namespace mutation

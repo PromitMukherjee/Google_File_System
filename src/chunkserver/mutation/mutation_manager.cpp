@@ -118,6 +118,62 @@ MutationManager::ExecutePrimaryRecordAppend(
         return result;
     }
 
+    /*
+     * GFS record append is at-least-once.  The primary applies
+     * the mutation before propagation.  Therefore a propagation
+     * failure does not roll back the primary mutation.
+     *
+     * On a subsequent append retry, retry propagation of the
+     * outstanding mutation first.  This preserves the existing
+     * mutation-id ordering on secondaries while still allowing
+     * the client retry to append the record again, which is the
+     * intended at-least-once behavior.
+     */
+    if (propagation_function) {
+        Mutation pending_mutation;
+        bool has_pending_mutation = false;
+
+        {
+            std::lock_guard lock(mutex_);
+
+            const auto pending_it =
+                pending_propagations_.find(handle);
+
+            if (pending_it !=
+                pending_propagations_.end()) {
+                pending_mutation =
+                    pending_it->second;
+                has_pending_mutation = true;
+            }
+        }
+
+        if (has_pending_mutation) {
+            if (!propagation_function(
+                    pending_mutation)) {
+                result.status =
+                    RecordAppendStatus::Failed;
+                result.chunk_size =
+                    chunkserver_.GetChunkSize(handle);
+                return result;
+            }
+
+            {
+                std::lock_guard lock(mutex_);
+
+                const auto pending_it =
+                    pending_propagations_.find(handle);
+
+                if (pending_it !=
+                    pending_propagations_.end() &&
+                    pending_it->second ==
+                        pending_mutation) {
+                    pending_propagations_.erase(
+                        pending_it);
+                }
+            }
+        }
+    }
+
     const std::uint64_t current_size =
         chunkserver_.GetChunkSize(handle);
 
@@ -135,6 +191,8 @@ MutationManager::ExecutePrimaryRecordAppend(
                 static_cast<std::size_t>(padding_size),
                 '\0');
 
+            Mutation mutation;
+
             {
                 std::lock_guard lock(mutex_);
 
@@ -145,7 +203,6 @@ MutationManager::ExecutePrimaryRecordAppend(
                     return result;
                 }
 
-                Mutation mutation;
                 mutation.chunk_handle = handle;
                 mutation.chunk_version = version;
                 mutation.mutation_id = mutation_id;
@@ -155,15 +212,22 @@ MutationManager::ExecutePrimaryRecordAppend(
                 if (!ApplyMutationLocked(mutation)) {
                     return result;
                 }
+            }
 
-                if (propagation_function &&
-                    !propagation_function(mutation)) {
-                    result.status =
-                        RecordAppendStatus::Failed;
-                    result.chunk_size =
-                        chunkserver_.GetChunkSize(handle);
-                    return result;
+            if (propagation_function &&
+                !propagation_function(mutation)) {
+                {
+                    std::lock_guard lock(mutex_);
+
+                    pending_propagations_[handle] =
+                        mutation;
                 }
+
+                result.status =
+                    RecordAppendStatus::Failed;
+                result.chunk_size =
+                    chunkserver_.GetChunkSize(handle);
+                return result;
             }
         }
 
@@ -197,20 +261,28 @@ MutationManager::ExecutePrimaryRecordAppend(
         if (!ApplyMutationLocked(mutation)) {
             return result;
         }
-
-        if (propagation_function &&
-            !propagation_function(mutation)) {
-            result.status =
-                RecordAppendStatus::Failed;
-            result.offset = offset;
-            result.chunk_size =
-                chunkserver_.GetChunkSize(handle);
-            result.bytes_appended = data.size();
-            return result;
-        }
     }
 
-    result.status = RecordAppendStatus::Success;
+    if (propagation_function &&
+        !propagation_function(mutation)) {
+        {
+            std::lock_guard lock(mutex_);
+
+            pending_propagations_[handle] =
+                mutation;
+        }
+
+        result.status =
+            RecordAppendStatus::Failed;
+        result.offset = offset;
+        result.chunk_size =
+            chunkserver_.GetChunkSize(handle);
+        result.bytes_appended = data.size();
+        return result;
+    }
+
+    result.status =
+        RecordAppendStatus::Success;
     result.offset = offset;
     result.chunk_size =
         chunkserver_.GetChunkSize(handle);
@@ -276,7 +348,12 @@ bool MutationManager::ResetChunk(
     const bool removed_last =
         last_applied_mutation_ids_.erase(handle) > 0;
 
-    return removed_next || removed_last;
+    const bool removed_pending =
+        pending_propagations_.erase(handle) > 0;
+
+    return removed_next ||
+           removed_last ||
+           removed_pending;
 }
 
 std::size_t MutationManager::TrackedChunkCount()
@@ -291,6 +368,7 @@ void MutationManager::Clear() {
 
     next_mutation_ids_.clear();
     last_applied_mutation_ids_.clear();
+    pending_propagations_.clear();
 }
 
 std::uint64_t

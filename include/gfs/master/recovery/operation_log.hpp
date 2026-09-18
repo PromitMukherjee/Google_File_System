@@ -20,7 +20,9 @@ enum class OperationType : std::uint32_t {
     AddChunkToFile = 8,
     RemoveChunkFromFile = 9,
     DeleteChunk = 10,
-    SetChunkSize = 11
+    SetChunkSize = 11,
+    CreateSnapshot = 12,
+    CopyOnWrite = 13
 };
 
 struct OperationRecord {

@@ -65,9 +65,19 @@ public:
         ChunkVersion version = 1,
         std::uint64_t size = 0);
 
+    bool AllocateStandaloneChunk(
+        ChunkHandle handle,
+        ChunkVersion version = 1,
+        std::uint64_t size = 0);
+
     bool AddChunkToFile(
         const std::string& path,
         ChunkHandle chunk_handle);
+
+    bool ReplaceChunkInFile(
+        const std::string& path,
+        ChunkIndex chunk_index,
+        ChunkHandle replacement_handle);
 
     bool RemoveChunkFromFile(
         const std::string& path,
@@ -113,6 +123,13 @@ public:
 
     std::vector<ChunkHandle> GetFileChunks(
         const std::string& path) const;
+
+    std::size_t GetChunkReferenceCount(
+        ChunkHandle chunk_handle) const;
+
+    bool CloneFileMetadata(
+        const std::string& source_path,
+        const std::string& destination_path);
 
     std::size_t FileCount() const;
     std::size_t ChunkCount() const;

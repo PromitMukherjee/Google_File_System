@@ -116,11 +116,13 @@ bool Master::DeleteFile(
 
     for (const ChunkHandle handle :
          chunks) {
-        static_cast<void>(
-            replica_manager_.RemoveChunk(handle));
+        if (metadata_.GetChunkReferenceCount(handle) == 0) {
+            static_cast<void>(
+                replica_manager_.RemoveChunk(handle));
 
-        static_cast<void>(
-            lease_manager_.ReleaseLease(handle));
+            static_cast<void>(
+                lease_manager_.ReleaseLease(handle));
+        }
     }
 
     return namespace_manager_.DeleteFile(path);
@@ -198,6 +200,426 @@ std::optional<metadata::FileMetadata>
 Master::GetFileInfo(
     const std::string& path) const {
     return metadata_.GetFile(path);
+}
+
+bool Master::CreateSnapshot(
+    const std::string& source_path,
+    const std::string& snapshot_path) {
+    if (source_path.empty() ||
+        snapshot_path.empty() ||
+        source_path == snapshot_path ||
+        !namespace_manager_.Exists(source_path) ||
+        namespace_manager_.Exists(snapshot_path) ||
+        namespace_management::NamespaceManager::IsRootPath(
+            snapshot_path)) {
+        return false;
+    }
+
+    if (!AppendOperation(
+            recovery::OperationType::CreateSnapshot,
+            {source_path, snapshot_path})) {
+        return false;
+    }
+
+    return CreateSnapshotInternal(
+        source_path,
+        snapshot_path);
+}
+
+bool Master::CreateSnapshotInternal(
+    const std::string& source_path,
+    const std::string& snapshot_path) {
+    const bool source_is_file =
+        namespace_manager_.IsFile(source_path);
+
+    const auto nodes =
+        namespace_manager_.ExportNodes();
+
+    std::vector<
+        namespace_management::NamespaceManager::NodeInfo>
+        affected_nodes;
+
+    if (source_is_file) {
+        const auto it =
+            std::find_if(
+                nodes.begin(),
+                nodes.end(),
+                [&source_path](
+                    const auto& node) {
+                    return node.path == source_path;
+                });
+
+        if (it == nodes.end()) {
+            return false;
+        }
+
+        affected_nodes.push_back(*it);
+    } else {
+        const std::string prefix =
+            source_path == "/"
+                ? "/"
+                : source_path + "/";
+
+        for (const auto& node :
+             nodes) {
+            if (node.path == source_path ||
+                (source_path == "/"
+                     ? node.path != "/"
+                     : node.path.rfind(
+                           prefix,
+                           0) == 0)) {
+                affected_nodes.push_back(node);
+            }
+        }
+
+        std::sort(
+            affected_nodes.begin(),
+            affected_nodes.end(),
+            [](const auto& a,
+               const auto& b) {
+                const auto depth =
+                    [](const std::string& path) {
+                        return static_cast<std::size_t>(
+                            std::count(
+                                path.begin(),
+                                path.end(),
+                                '/'));
+                    };
+
+                const auto depth_a =
+                    depth(a.path);
+                const auto depth_b =
+                    depth(b.path);
+
+                if (depth_a != depth_b) {
+                    return depth_a < depth_b;
+                }
+
+                return a.path < b.path;
+            });
+    }
+
+    std::vector<std::string> created_files;
+    std::vector<std::string> created_directories;
+
+    auto destination_for =
+        [&](const std::string& source) {
+            if (source_is_file) {
+                return snapshot_path;
+            }
+
+            if (source == source_path) {
+                return snapshot_path;
+            }
+
+            const std::string prefix =
+                source_path == "/"
+                    ? "/"
+                    : source_path + "/";
+
+            const std::string suffix =
+                source_path == "/"
+                    ? source.substr(1)
+                    : source.substr(prefix.size());
+
+            return snapshot_path + "/" + suffix;
+        };
+
+    auto rollback =
+        [&]() {
+            for (auto it =
+                     created_files.rbegin();
+                 it != created_files.rend();
+                 ++it) {
+                static_cast<void>(
+                    metadata_.DeleteFile(*it));
+
+                static_cast<void>(
+                    namespace_manager_.DeleteFile(
+                        *it));
+            }
+
+            for (auto it =
+                     created_directories.rbegin();
+                 it != created_directories.rend();
+                 ++it) {
+                static_cast<void>(
+                    namespace_manager_
+                        .DeleteDirectory(*it));
+            }
+        };
+
+    if (source_is_file) {
+        const auto source_file =
+            metadata_.GetFile(source_path);
+
+        if (!source_file.has_value()) {
+            return false;
+        }
+
+        if (!namespace_manager_.CreateFile(
+                snapshot_path)) {
+            return false;
+        }
+
+        created_files.push_back(
+            snapshot_path);
+
+        if (!metadata_.CloneFileMetadata(
+                source_path,
+                snapshot_path)) {
+            rollback();
+            return false;
+        }
+
+        for (const ChunkHandle handle :
+             source_file->GetChunkHandles()) {
+            static_cast<void>(
+                lease_manager_.ReleaseLease(handle));
+        }
+
+        return true;
+    }
+
+    if (!namespace_manager_.CreateDirectory(
+            snapshot_path)) {
+        return false;
+    }
+
+    created_directories.push_back(
+        snapshot_path);
+
+    for (const auto& node :
+         affected_nodes) {
+        if (node.path == source_path) {
+            continue;
+        }
+
+        const std::string destination =
+            destination_for(node.path);
+
+        if (node.type ==
+            namespace_management::NamespaceManager::
+                NodeType::Directory) {
+            if (!namespace_manager_.CreateDirectory(
+                    destination)) {
+                rollback();
+                return false;
+            }
+
+            created_directories.push_back(
+                destination);
+            continue;
+        }
+
+        const auto source_file =
+            metadata_.GetFile(node.path);
+
+        if (!source_file.has_value()) {
+            rollback();
+            return false;
+        }
+
+        if (!namespace_manager_.CreateFile(
+                destination)) {
+            rollback();
+            return false;
+        }
+
+        created_files.push_back(
+            destination);
+
+        if (!metadata_.CloneFileMetadata(
+                node.path,
+                destination)) {
+            rollback();
+            return false;
+        }
+
+        for (const ChunkHandle handle :
+             source_file->GetChunkHandles()) {
+            static_cast<void>(
+                lease_manager_.ReleaseLease(handle));
+        }
+    }
+
+    return true;
+}
+
+std::optional<ChunkHandle>
+Master::PrepareCopyOnWrite(
+    const std::string& path,
+    ChunkIndex chunk_index,
+    const ChunkCloneFunction& clone_function) {
+    if (path.empty() ||
+        !metadata_.FileExists(path)) {
+        return std::nullopt;
+    }
+
+    const auto chunks =
+        metadata_.GetFileChunks(path);
+
+    if (chunk_index >= chunks.size()) {
+        return std::nullopt;
+    }
+
+    const ChunkHandle source_handle =
+        chunks[
+            static_cast<std::size_t>(
+                chunk_index)];
+
+    if (source_handle == 0) {
+        return std::nullopt;
+    }
+
+    const std::size_t references =
+        metadata_.GetChunkReferenceCount(
+            source_handle);
+
+    if (references <= 1) {
+        return source_handle;
+    }
+
+    const auto source_chunk =
+        metadata_.GetChunk(source_handle);
+
+    if (!source_chunk.has_value()) {
+        return std::nullopt;
+    }
+
+    const auto replicas =
+        replica_manager_.GetReplicaServers(
+            source_handle);
+
+    const ChunkHandle destination_handle =
+        metadata_.GetNextChunkHandle();
+
+    if (destination_handle == 0 ||
+        !metadata_.AllocateStandaloneChunk(
+            destination_handle,
+            source_chunk->version,
+            source_chunk->size)) {
+        return std::nullopt;
+    }
+
+    bool registered = true;
+    bool primary_registered = false;
+
+    for (const ServerId server_id :
+         replicas) {
+        const bool is_primary =
+            !primary_registered;
+
+        if (!replica_manager_.RegisterReplica(
+                destination_handle,
+                server_id,
+                is_primary)) {
+            registered = false;
+            break;
+        }
+
+        primary_registered |= is_primary;
+    }
+
+    if (!registered ||
+        (!replicas.empty() &&
+         !primary_registered)) {
+        static_cast<void>(
+            replica_manager_.RemoveChunk(
+                destination_handle));
+
+        static_cast<void>(
+            metadata_.DeleteChunk(
+                destination_handle));
+
+        return std::nullopt;
+    }
+
+    static_cast<void>(
+        lease_manager_.ReleaseLease(
+            source_handle));
+
+    if (clone_function &&
+        !clone_function(
+            source_handle,
+            destination_handle,
+            replicas)) {
+        static_cast<void>(
+            replica_manager_.RemoveChunk(
+                destination_handle));
+
+        static_cast<void>(
+            metadata_.DeleteChunk(
+                destination_handle));
+
+        return std::nullopt;
+    }
+
+    if (!metadata_.AddChunkToFile(
+            path,
+            destination_handle)) {
+        static_cast<void>(
+            replica_manager_.RemoveChunk(
+                destination_handle));
+
+        static_cast<void>(
+            metadata_.DeleteChunk(
+                destination_handle));
+
+        return std::nullopt;
+    }
+
+    if (!metadata_.RemoveChunkFromFile(
+            path,
+            source_handle)) {
+        static_cast<void>(
+            metadata_.RemoveChunkFromFile(
+                path,
+                destination_handle));
+
+        static_cast<void>(
+            replica_manager_.RemoveChunk(
+                destination_handle));
+
+        static_cast<void>(
+            metadata_.DeleteChunk(
+                destination_handle));
+
+        return std::nullopt;
+    }
+
+    if (!AppendOperation(
+            recovery::OperationType::CopyOnWrite,
+            {path,
+             std::to_string(chunk_index),
+             std::to_string(source_handle),
+             std::to_string(destination_handle),
+             std::to_string(source_chunk->version),
+             std::to_string(source_chunk->size)})) {
+        static_cast<void>(
+            metadata_.ReplaceChunkInFile(
+                path,
+                chunk_index,
+                source_handle));
+
+        static_cast<void>(
+            replica_manager_.RemoveChunk(
+                destination_handle));
+
+        static_cast<void>(
+            metadata_.DeleteChunk(
+                destination_handle));
+
+        return std::nullopt;
+    }
+
+    return destination_handle;
+}
+
+std::size_t Master::GetChunkReferenceCount(
+    ChunkHandle handle) const {
+    return metadata_.GetChunkReferenceCount(
+        handle);
 }
 
 std::optional<metadata::ChunkMetadata>
@@ -283,7 +705,8 @@ bool Master::AddChunkToFile(
         if (std::find(
                 chunks.begin(),
                 chunks.end(),
-                handle) != chunks.end()) {
+                handle) !=
+            chunks.end()) {
             return true;
         }
     }
@@ -313,7 +736,8 @@ bool Master::RemoveChunkFromFile(
     if (std::find(
             chunks.begin(),
             chunks.end(),
-            handle) == chunks.end()) {
+            handle) ==
+        chunks.end()) {
         return false;
     }
 
@@ -514,11 +938,6 @@ bool Master::Initialize() {
         }
     }
 
-    /*
-     * Replica locations are runtime state.
-     * They are deliberately not reconstructed
-     * from the checkpoint or operation log.
-     */
     replica_manager_.Clear();
 
     initialized_ = true;
@@ -555,6 +974,106 @@ Master::GetOperationLogPath()
     return operation_log_.GetPath();
 }
 
+bool Master::ReplayCopyOnWrite(
+    const std::vector<std::string>& fields) {
+    if (fields.size() != 6) {
+        return false;
+    }
+
+    std::uint64_t chunk_index = 0;
+    std::uint64_t source_handle = 0;
+    std::uint64_t destination_handle = 0;
+    std::uint64_t version = 0;
+    std::uint64_t size = 0;
+
+    try {
+        std::size_t position = 0;
+
+        chunk_index =
+            std::stoull(fields[1], &position);
+
+        if (position != fields[1].size()) {
+            return false;
+        }
+
+        source_handle =
+            std::stoull(fields[2], &position);
+
+        if (position != fields[2].size()) {
+            return false;
+        }
+
+        destination_handle =
+            std::stoull(fields[3], &position);
+
+        if (position != fields[3].size()) {
+            return false;
+        }
+
+        version =
+            std::stoull(fields[4], &position);
+
+        if (position != fields[4].size()) {
+            return false;
+        }
+
+        size =
+            std::stoull(fields[5], &position);
+
+        if (position != fields[5].size()) {
+            return false;
+        }
+    } catch (...) {
+        return false;
+    }
+
+    if (source_handle == 0 ||
+        destination_handle == 0 ||
+        version == 0 ||
+        source_handle == destination_handle) {
+        return false;
+    }
+
+    const auto chunks =
+        metadata_.GetFileChunks(fields[0]);
+
+    if (chunk_index >= chunks.size()) {
+        return false;
+    }
+
+    if (chunks[
+            static_cast<std::size_t>(
+                chunk_index)] ==
+        destination_handle) {
+        return true;
+    }
+
+    if (chunks[
+            static_cast<std::size_t>(
+                chunk_index)] !=
+        source_handle) {
+        return false;
+    }
+
+    if (!metadata_.ChunkExists(
+            destination_handle)) {
+        if (!metadata_.AllocateStandaloneChunk(
+                destination_handle,
+                static_cast<ChunkVersion>(
+                    version),
+                size)) {
+            return false;
+        }
+    }
+
+    return metadata_.ReplaceChunkInFile(
+        fields[0],
+        static_cast<ChunkIndex>(
+            chunk_index),
+        static_cast<ChunkHandle>(
+            destination_handle));
+}
+
 bool Master::ReplayOperation(
     const recovery::OperationRecord& record) {
     std::vector<std::string> fields;
@@ -589,7 +1108,8 @@ bool Master::ReplayOperation(
             return false;
         }
 
-        if (namespace_manager_.Exists(fields[0])) {
+        if (namespace_manager_.Exists(
+                fields[0])) {
             return namespace_manager_.IsDirectory(
                 fields[0]);
         }
@@ -605,7 +1125,9 @@ bool Master::ReplayOperation(
 
         std::uint64_t factor = 0;
 
-        if (!parse_u64(fields[1], factor) ||
+        if (!parse_u64(
+                fields[1],
+                factor) ||
             factor == 0 ||
             factor >
                 std::numeric_limits<
@@ -613,10 +1135,12 @@ bool Master::ReplayOperation(
             return false;
         }
 
-        if (namespace_manager_.Exists(fields[0])) {
+        if (namespace_manager_.Exists(
+                fields[0])) {
             return namespace_manager_.IsFile(
                        fields[0]) &&
-                   metadata_.FileExists(fields[0]);
+                   metadata_.FileExists(
+                       fields[0]);
         }
 
         if (!namespace_manager_.CreateFile(
@@ -647,7 +1171,8 @@ bool Master::ReplayOperation(
         }
 
         if (metadata_exists &&
-            !metadata_.DeleteFile(fields[0])) {
+            !metadata_.DeleteFile(
+                fields[0])) {
             return false;
         }
 
@@ -707,23 +1232,32 @@ bool Master::ReplayOperation(
         std::uint64_t version = 0;
         std::uint64_t size = 0;
 
-        if (!parse_u64(fields[1], handle) ||
-            !parse_u64(fields[2], version) ||
-            !parse_u64(fields[3], size) ||
+        if (!parse_u64(
+                fields[1],
+                handle) ||
+            !parse_u64(
+                fields[2],
+                version) ||
+            !parse_u64(
+                fields[3],
+                size) ||
             handle == 0 ||
             version == 0) {
             return false;
         }
 
         if (metadata_.ChunkExists(
-                static_cast<ChunkHandle>(handle))) {
+                static_cast<ChunkHandle>(
+                    handle))) {
             return true;
         }
 
         return metadata_.AllocateChunk(
             fields[0],
-            static_cast<ChunkHandle>(handle),
-            static_cast<ChunkVersion>(version),
+            static_cast<ChunkHandle>(
+                handle),
+            static_cast<ChunkVersion>(
+                version),
             size);
     }
 
@@ -734,7 +1268,9 @@ bool Master::ReplayOperation(
 
         std::uint64_t size = 0;
 
-        if (!parse_u64(fields[1], size)) {
+        if (!parse_u64(
+                fields[1],
+                size)) {
             return false;
         }
 
@@ -751,16 +1287,22 @@ bool Master::ReplayOperation(
         std::uint64_t handle = 0;
         std::uint64_t version = 0;
 
-        if (!parse_u64(fields[0], handle) ||
-            !parse_u64(fields[1], version) ||
+        if (!parse_u64(
+                fields[0],
+                handle) ||
+            !parse_u64(
+                fields[1],
+                version) ||
             handle == 0 ||
             version == 0) {
             return false;
         }
 
         return metadata_.SetChunkVersion(
-            static_cast<ChunkHandle>(handle),
-            static_cast<ChunkVersion>(version));
+            static_cast<ChunkHandle>(
+                handle),
+            static_cast<ChunkVersion>(
+                version));
     }
 
     case recovery::OperationType::AddChunkToFile: {
@@ -770,25 +1312,30 @@ bool Master::ReplayOperation(
 
         std::uint64_t handle = 0;
 
-        if (!parse_u64(fields[1], handle) ||
+        if (!parse_u64(
+                fields[1],
+                handle) ||
             handle == 0) {
             return false;
         }
 
         const auto chunks =
-            metadata_.GetFileChunks(fields[0]);
+            metadata_.GetFileChunks(
+                fields[0]);
 
         if (std::find(
                 chunks.begin(),
                 chunks.end(),
-                static_cast<ChunkHandle>(handle)) !=
+                static_cast<ChunkHandle>(
+                    handle)) !=
             chunks.end()) {
             return true;
         }
 
         return metadata_.AddChunkToFile(
             fields[0],
-            static_cast<ChunkHandle>(handle));
+            static_cast<ChunkHandle>(
+                handle));
     }
 
     case recovery::OperationType::RemoveChunkFromFile: {
@@ -798,25 +1345,30 @@ bool Master::ReplayOperation(
 
         std::uint64_t handle = 0;
 
-        if (!parse_u64(fields[1], handle) ||
+        if (!parse_u64(
+                fields[1],
+                handle) ||
             handle == 0) {
             return false;
         }
 
         const auto chunks =
-            metadata_.GetFileChunks(fields[0]);
+            metadata_.GetFileChunks(
+                fields[0]);
 
         if (std::find(
                 chunks.begin(),
                 chunks.end(),
-                static_cast<ChunkHandle>(handle)) ==
+                static_cast<ChunkHandle>(
+                    handle)) ==
             chunks.end()) {
             return true;
         }
 
         return metadata_.RemoveChunkFromFile(
             fields[0],
-            static_cast<ChunkHandle>(handle));
+            static_cast<ChunkHandle>(
+                handle));
     }
 
     case recovery::OperationType::DeleteChunk: {
@@ -826,18 +1378,22 @@ bool Master::ReplayOperation(
 
         std::uint64_t handle = 0;
 
-        if (!parse_u64(fields[0], handle) ||
+        if (!parse_u64(
+                fields[0],
+                handle) ||
             handle == 0) {
             return false;
         }
 
         if (!metadata_.ChunkExists(
-                static_cast<ChunkHandle>(handle))) {
+                static_cast<ChunkHandle>(
+                    handle))) {
             return true;
         }
 
         return metadata_.DeleteChunk(
-            static_cast<ChunkHandle>(handle));
+            static_cast<ChunkHandle>(
+                handle));
     }
 
     case recovery::OperationType::SetChunkSize: {
@@ -848,15 +1404,39 @@ bool Master::ReplayOperation(
         std::uint64_t handle = 0;
         std::uint64_t size = 0;
 
-        if (!parse_u64(fields[0], handle) ||
-            !parse_u64(fields[1], size) ||
+        if (!parse_u64(
+                fields[0],
+                handle) ||
+            !parse_u64(
+                fields[1],
+                size) ||
             handle == 0) {
             return false;
         }
 
         return metadata_.SetChunkSize(
-            static_cast<ChunkHandle>(handle),
+            static_cast<ChunkHandle>(
+                handle),
             size);
+    }
+
+    case recovery::OperationType::CreateSnapshot: {
+        if (fields.size() != 2) {
+            return false;
+        }
+
+        if (namespace_manager_.Exists(
+                fields[1])) {
+            return true;
+        }
+
+        return CreateSnapshotInternal(
+            fields[0],
+            fields[1]);
+    }
+
+    case recovery::OperationType::CopyOnWrite: {
+        return ReplayCopyOnWrite(fields);
     }
     }
 
@@ -1004,8 +1584,8 @@ bool Master::RemoveReplica(
 
         if (lease.has_value() &&
             (!primary.has_value() ||
-             *primary !=
-                 lease->primary_server_id)) {
+             primary->operator!=(
+                 lease->primary_server_id))) {
             static_cast<void>(
                 lease_manager_.ReleaseLease(
                     handle));

@@ -49,6 +49,20 @@ bool GFSClient::CreateFile(
     return file_create_function_(path);
 }
 
+bool GFSClient::CreateSnapshot(
+    const FilePath& source_path,
+    const FilePath& snapshot_path) {
+    if (source_path.empty() ||
+        snapshot_path.empty() ||
+        !snapshot_create_function_) {
+        return false;
+    }
+
+    return snapshot_create_function_(
+        source_path,
+        snapshot_path);
+}
+
 bool GFSClient::FileExists(
     const FilePath& path) const {
     if (path.empty()) {
@@ -168,6 +182,24 @@ void GFSClient::SetRecordAppendRetryPolicy(
     retry::RetryPolicy retry_policy) {
     record_appender_.SetRetryPolicy(
         retry_policy);
+}
+
+void GFSClient::SetChunkSizeUpdater(
+    io::Writer::ChunkSizeUpdater updater) {
+    writer_.SetChunkSizeUpdater(
+        std::move(updater));
+}
+
+void GFSClient::SetCopyOnWriteFunction(
+    CopyOnWriteFunction copy_on_write_function) {
+    writer_.SetCopyOnWriteFunction(
+        std::move(copy_on_write_function));
+}
+
+void GFSClient::SetSnapshotCreateFunction(
+    SnapshotCreateFunction snapshot_create_function) {
+    snapshot_create_function_ =
+        std::move(snapshot_create_function);
 }
 
 metadata::MasterClient&

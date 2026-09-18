@@ -15,6 +15,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
+#include <functional>
 #include <optional>
 #include <string>
 #include <vector>
@@ -65,6 +66,30 @@ public:
     [[nodiscard]] bool UpdateFileSize(
         const std::string& path,
         std::uint64_t size);
+
+    // ============================================================
+    // PHASE 13 — SNAPSHOT / COPY-ON-WRITE
+    // ============================================================
+
+    using ChunkCloneFunction =
+        std::function<bool(
+            ChunkHandle source_handle,
+            ChunkHandle destination_handle,
+            const std::vector<ServerId>& replica_servers)>;
+
+    [[nodiscard]] bool CreateSnapshot(
+        const std::string& source_path,
+        const std::string& snapshot_path);
+
+    [[nodiscard]] std::optional<ChunkHandle>
+    PrepareCopyOnWrite(
+        const std::string& path,
+        ChunkIndex chunk_index,
+        const ChunkCloneFunction& clone_function);
+
+    [[nodiscard]] std::size_t
+    GetChunkReferenceCount(
+        ChunkHandle handle) const;
 
     // ============================================================
     // CHUNK METADATA OPERATIONS
@@ -357,6 +382,13 @@ private:
 
     [[nodiscard]] bool AppendOperation(
         recovery::OperationType type,
+        const std::vector<std::string>& fields);
+
+    [[nodiscard]] bool CreateSnapshotInternal(
+        const std::string& source_path,
+        const std::string& snapshot_path);
+
+    [[nodiscard]] bool ReplayCopyOnWrite(
         const std::vector<std::string>& fields);
 
     // ============================================================

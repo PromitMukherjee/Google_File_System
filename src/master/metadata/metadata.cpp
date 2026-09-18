@@ -40,12 +40,14 @@ bool Metadata::DeleteFile(
     const auto chunk_handles =
         file_it->second.GetChunkHandles();
 
+    files_.erase(file_it);
+
     for (const ChunkHandle handle :
          chunk_handles) {
-        chunks_.erase(handle);
+        if (GetChunkReferenceCount(handle) == 0) {
+            chunks_.erase(handle);
+        }
     }
-
-    files_.erase(file_it);
 
     return true;
 }
@@ -183,6 +185,43 @@ bool Metadata::AllocateChunk(
     return true;
 }
 
+bool Metadata::AllocateStandaloneChunk(
+    ChunkHandle handle,
+    ChunkVersion version,
+    std::uint64_t size) {
+    if (handle == 0 ||
+        version == 0 ||
+        chunks_.contains(handle)) {
+        return false;
+    }
+
+    ChunkMetadata chunk(
+        handle,
+        version);
+
+    chunk.SetSize(size);
+
+    const auto [it, inserted] =
+        chunks_.emplace(
+            handle,
+            std::move(chunk));
+
+    if (!inserted) {
+        return false;
+    }
+
+    if (handle >= next_chunk_handle_) {
+        next_chunk_handle_ = handle + 1;
+
+        if (next_chunk_handle_ == 0) {
+            chunks_.erase(it);
+            return false;
+        }
+    }
+
+    return true;
+}
+
 bool Metadata::AddChunkToFile(
     const std::string& path,
     ChunkHandle chunk_handle) {
@@ -199,6 +238,56 @@ bool Metadata::AddChunkToFile(
 
     return file_it->second.AddChunk(
         chunk_handle);
+}
+
+bool Metadata::ReplaceChunkInFile(
+    const std::string& path,
+    ChunkIndex chunk_index,
+    ChunkHandle replacement_handle) {
+    if (path.empty() ||
+        replacement_handle == 0) {
+        return false;
+    }
+
+    const auto file_it =
+        files_.find(path);
+
+    const auto replacement_it =
+        chunks_.find(replacement_handle);
+
+    if (file_it == files_.end() ||
+        replacement_it == chunks_.end()) {
+        return false;
+    }
+
+    auto& handles =
+        file_it->second.chunk_handles;
+
+    if (chunk_index >= handles.size()) {
+        return false;
+    }
+
+    if (handles[
+            static_cast<std::size_t>(
+                chunk_index)] ==
+        replacement_handle) {
+        return true;
+    }
+
+    if (std::find(
+            handles.begin(),
+            handles.end(),
+            replacement_handle) !=
+        handles.end()) {
+        return false;
+    }
+
+    handles[
+        static_cast<std::size_t>(
+            chunk_index)] =
+        replacement_handle;
+
+    return true;
 }
 
 bool Metadata::RemoveChunkFromFile(
@@ -380,6 +469,62 @@ Metadata::GetFileChunks(
     }
 
     return it->second.GetChunkHandles();
+}
+
+std::size_t Metadata::GetChunkReferenceCount(
+    ChunkHandle chunk_handle) const {
+    if (chunk_handle == 0 ||
+        !chunks_.contains(chunk_handle)) {
+        return 0;
+    }
+
+    std::size_t count = 0;
+
+    for (const auto& [path, file] :
+         files_) {
+        if (file.HasChunk(chunk_handle)) {
+            ++count;
+        }
+    }
+
+    return count;
+}
+
+bool Metadata::CloneFileMetadata(
+    const std::string& source_path,
+    const std::string& destination_path) {
+    if (source_path.empty() ||
+        destination_path.empty() ||
+        source_path == destination_path ||
+        files_.contains(destination_path)) {
+        return false;
+    }
+
+    const auto source_it =
+        files_.find(source_path);
+
+    if (source_it == files_.end()) {
+        return false;
+    }
+
+    FileMetadata copy =
+        source_it->second;
+
+    copy.SetPath(destination_path);
+
+    for (const ChunkHandle handle :
+         copy.GetChunkHandles()) {
+        if (handle == 0 ||
+            !chunks_.contains(handle)) {
+            return false;
+        }
+    }
+
+    files_.emplace(
+        destination_path,
+        std::move(copy));
+
+    return true;
 }
 
 std::size_t Metadata::FileCount() const {

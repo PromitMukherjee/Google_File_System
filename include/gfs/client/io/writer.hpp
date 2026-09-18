@@ -24,6 +24,15 @@ public:
         const FilePath&,
         std::uint64_t)>;
 
+    using ChunkSizeUpdater = std::function<bool(
+        ChunkHandle,
+        std::uint64_t)>;
+
+    using CopyOnWriteFunction = std::function<bool(
+        const FilePath&,
+        ChunkIndex,
+        ChunkHandle)>;
+
     Writer(metadata::MasterClient& master_client,
            metadata::ChunkLocationCache& location_cache,
            WriteFunction write_function,
@@ -45,6 +54,12 @@ public:
         std::uint64_t offset,
         const std::string& data);
 
+    void SetChunkSizeUpdater(
+        ChunkSizeUpdater updater);
+
+    void SetCopyOnWriteFunction(
+        CopyOnWriteFunction copy_on_write_function);
+
 private:
     [[nodiscard]] bool ResolveOrAllocateChunk(
         const FilePath& path,
@@ -60,6 +75,8 @@ private:
     metadata::ChunkLocationCache& location_cache_;
     WriteFunction write_function_;
     FileSizeUpdater file_size_updater_;
+    ChunkSizeUpdater chunk_size_updater_;
+    CopyOnWriteFunction copy_on_write_function_;
 };
 
 }  // namespace gfs::client::io

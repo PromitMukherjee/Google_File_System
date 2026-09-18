@@ -22,6 +22,14 @@ public:
     using FileCreateFunction =
         std::function<bool(const FilePath&)>;
 
+    using SnapshotCreateFunction =
+        std::function<bool(
+            const FilePath& source_path,
+            const FilePath& snapshot_path)>;
+
+    using CopyOnWriteFunction =
+        io::Writer::CopyOnWriteFunction;
+
     GFSClient(
         std::unique_ptr<metadata::MasterClient>
             master_client,
@@ -45,6 +53,10 @@ public:
 
     [[nodiscard]] bool CreateFile(
         const FilePath& path);
+
+    [[nodiscard]] bool CreateSnapshot(
+        const FilePath& source_path,
+        const FilePath& snapshot_path);
 
     [[nodiscard]] bool FileExists(
         const FilePath& path) const;
@@ -105,6 +117,15 @@ public:
     void SetRecordAppendRetryPolicy(
         retry::RetryPolicy retry_policy);
 
+    void SetChunkSizeUpdater(
+        io::Writer::ChunkSizeUpdater updater);
+
+    void SetCopyOnWriteFunction(
+        CopyOnWriteFunction copy_on_write_function);
+
+    void SetSnapshotCreateFunction(
+        SnapshotCreateFunction snapshot_create_function);
+
     [[nodiscard]] metadata::MasterClient&
     GetMasterClient() noexcept;
 
@@ -130,6 +151,7 @@ private:
     io::RecordAppender record_appender_;
 
     FileCreateFunction file_create_function_;
+    SnapshotCreateFunction snapshot_create_function_;
 };
 
 }  // namespace gfs::client

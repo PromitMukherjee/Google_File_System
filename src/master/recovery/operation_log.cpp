@@ -3,10 +3,10 @@
 #include <algorithm>
 #include <array>
 #include <cstddef>
+#include <cstring>
 #include <fstream>
 #include <limits>
 #include <string_view>
-#include <cstring>
 
 namespace gfs::master::recovery {
 
@@ -41,7 +41,7 @@ bool IsValidOperationType(
                    OperationType::CreateDirectory) &&
            value <=
                static_cast<std::uint32_t>(
-                   OperationType::SetChunkSize);
+                   OperationType::CopyOnWrite);
 }
 
 }  // namespace

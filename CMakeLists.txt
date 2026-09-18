@@ -262,6 +262,7 @@ if(TARGET gRPC::grpc++)
         PUBLIC
 
             gRPC::grpc++
+
     )
 
 else()
@@ -271,6 +272,7 @@ else()
         PUBLIC
 
             gfs_grpc
+
     )
 
 endif()
@@ -716,6 +718,25 @@ target_link_libraries(
 )
 
 # ============================================================
+# PHASE 13 TEST
+# Snapshot / Copy-On-Write
+# ============================================================
+
+add_executable(
+    gfs_phase13_test
+
+    tests/phase13_test.cpp
+)
+
+target_link_libraries(
+    gfs_phase13_test
+    PRIVATE
+
+        gfs_core
+        GTest::gtest_main
+)
+
+# ============================================================
 # TEST CONFIGURATION
 # ============================================================
 
@@ -733,6 +754,7 @@ foreach(
         gfs_phase10_test
         gfs_phase11_test
         gfs_phase12_test
+        gfs_phase13_test
 )
 
     target_include_directories(

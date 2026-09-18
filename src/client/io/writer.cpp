@@ -59,6 +59,27 @@ bool Writer::WriteChunk(
         return false;
     }
 
+    if (copy_on_write_function_ &&
+        !copy_on_write_function_(
+            path,
+            chunk_index,
+            entry.handle)) {
+        return false;
+    }
+
+    if (copy_on_write_function_) {
+        location_cache_.Invalidate(
+            path,
+            chunk_index);
+
+        if (!ResolveOrAllocateChunk(
+                path,
+                chunk_index,
+                entry)) {
+            return false;
+        }
+    }
+
     if (!WriteToChunkserver(
             entry,
             chunk_offset,
@@ -95,10 +116,13 @@ bool Writer::WriteSequential(
             static_cast<std::size_t>(
                 std::min<std::uint64_t>(
                     bytes_until_boundary,
-                    static_cast<std::uint64_t>(remaining)));
+                    static_cast<std::uint64_t>(
+                        remaining)));
 
         const std::string chunk_data =
-            data.substr(data_position, write_length);
+            data.substr(
+                data_position,
+                write_length);
 
         metadata::ChunkLocationCacheEntry entry;
 
@@ -107,6 +131,27 @@ bool Writer::WriteSequential(
                 chunk_index,
                 entry)) {
             return false;
+        }
+
+        if (copy_on_write_function_ &&
+            !copy_on_write_function_(
+                path,
+                chunk_index,
+                entry.handle)) {
+            return false;
+        }
+
+        if (copy_on_write_function_) {
+            location_cache_.Invalidate(
+                path,
+                chunk_index);
+
+            if (!ResolveOrAllocateChunk(
+                    path,
+                    chunk_index,
+                    entry)) {
+                return false;
+            }
         }
 
         if (!WriteToChunkserver(
@@ -123,9 +168,13 @@ bool Writer::WriteSequential(
 
     if (file_size_updater_) {
         const std::uint64_t end_offset =
-            offset + static_cast<std::uint64_t>(data.size());
+            offset +
+            static_cast<std::uint64_t>(
+                data.size());
 
-        if (!file_size_updater_(path, end_offset)) {
+        if (!file_size_updater_(
+                path,
+                end_offset)) {
             return false;
         }
     }
@@ -133,12 +182,26 @@ bool Writer::WriteSequential(
     return true;
 }
 
+void Writer::SetChunkSizeUpdater(
+    ChunkSizeUpdater updater) {
+    chunk_size_updater_ =
+        std::move(updater);
+}
+
+void Writer::SetCopyOnWriteFunction(
+    CopyOnWriteFunction copy_on_write_function) {
+    copy_on_write_function_ =
+        std::move(copy_on_write_function);
+}
+
 bool Writer::ResolveOrAllocateChunk(
     const FilePath& path,
     ChunkIndex chunk_index,
     metadata::ChunkLocationCacheEntry& entry) {
     const auto cached =
-        location_cache_.Lookup(path, chunk_index);
+        location_cache_.Lookup(
+            path,
+            chunk_index);
 
     if (cached.has_value()) {
         entry = *cached;
@@ -146,11 +209,15 @@ bool Writer::ResolveOrAllocateChunk(
     }
 
     auto chunk =
-        master_client_.LookupChunk(path, chunk_index);
+        master_client_.LookupChunk(
+            path,
+            chunk_index);
 
     if (!chunk.has_value()) {
         chunk =
-            master_client_.AllocateChunk(path, chunk_index);
+            master_client_.AllocateChunk(
+                path,
+                chunk_index);
     }
 
     if (!chunk.has_value() ||
@@ -162,7 +229,8 @@ bool Writer::ResolveOrAllocateChunk(
     entry.handle = chunk->handle;
     entry.chunk_index = chunk_index;
     entry.locations = chunk->locations;
-    entry.inserted_at = std::chrono::steady_clock::now();
+    entry.inserted_at =
+        std::chrono::steady_clock::now();
 
     location_cache_.Insert(
         path,
@@ -183,7 +251,8 @@ bool Writer::WriteToChunkserver(
         return false;
     }
 
-    for (const auto& location : entry.locations) {
+    for (const auto& location :
+         entry.locations) {
         if (location.server_id == 0) {
             continue;
         }
@@ -193,6 +262,19 @@ bool Writer::WriteToChunkserver(
                 entry.handle,
                 offset,
                 data)) {
+            if (chunk_size_updater_) {
+                const std::uint64_t end =
+                    offset +
+                    static_cast<std::uint64_t>(
+                        data.size());
+
+                if (!chunk_size_updater_(
+                        entry.handle,
+                        end)) {
+                    return false;
+                }
+            }
+
             return true;
         }
     }

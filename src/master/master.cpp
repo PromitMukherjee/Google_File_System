@@ -1443,12 +1443,6 @@ bool Master::ReplayOperation(
     return false;
 }
 
-/*
- * ------------------------------------------------------------
- * Existing Phase 1-10 functionality
- * ------------------------------------------------------------
- */
-
 bool Master::RegisterChunkReplica(
     ChunkHandle handle,
     ServerId server_id,
@@ -1584,8 +1578,8 @@ bool Master::RemoveReplica(
 
         if (lease.has_value() &&
             (!primary.has_value() ||
-             primary->operator!=(
-                 lease->primary_server_id))) {
+             *primary !=
+                lease->primary_server_id)) {
             static_cast<void>(
                 lease_manager_.ReleaseLease(
                     handle));

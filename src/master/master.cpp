@@ -1967,4 +1967,4 @@ Master::GetRebalancer() const noexcept {
     return rebalancer_;
 }
 
-}  // namespace gfs::master
+}// namespace gfs::master

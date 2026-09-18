@@ -381,6 +381,13 @@ add_library(
     src/master/replication/rebalancer.cpp
 
     # --------------------------------------------------------
+    # PHASE 15 — TESTING INFRASTRUCTURE
+    # --------------------------------------------------------
+
+    src/testing/failure_injector.cpp
+    src/testing/distributed_test_harness.cpp
+
+    # --------------------------------------------------------
     # CHUNKSERVER — CHECKSUM
     # --------------------------------------------------------
 
@@ -771,6 +778,25 @@ target_link_libraries(
 )
 
 # ============================================================
+# PHASE 15 TEST
+# Failure Injection + Distributed Testing
+# ============================================================
+
+add_executable(
+    gfs_phase15_test
+
+    tests/phase15_test.cpp
+)
+
+target_link_libraries(
+    gfs_phase15_test
+    PRIVATE
+
+        gfs_core
+        GTest::gtest_main
+)
+
+# ============================================================
 # TEST CONFIGURATION
 # ============================================================
 
@@ -790,6 +816,7 @@ foreach(
         gfs_phase12_test
         gfs_phase13_test
         gfs_phase14_test
+        gfs_phase15_test
 )
 
     target_include_directories(

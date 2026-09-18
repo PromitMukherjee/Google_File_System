@@ -20,10 +20,9 @@ using gfs::master::replication::ReplicaMove;
 using gfs::testing::DistributedTestHarness;
 using gfs::testing::FailureOperation;
 
-class Phase15Fixture {
-public:
-    Phase15Fixture()
-        : harness(2) {
+class Phase15Fixture : public testing::Test {
+protected:
+    void SetUp() override {
         ASSERT_TRUE(harness.Initialize());
 
         ASSERT_TRUE(harness.AddChunkserver(1));
@@ -38,7 +37,7 @@ public:
             harness.SendHeartbeat(3, 1000));
     }
 
-    DistributedTestHarness harness;
+    DistributedTestHarness harness{2};
 };
 
 TEST(

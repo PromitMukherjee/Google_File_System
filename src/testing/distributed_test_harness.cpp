@@ -87,8 +87,8 @@ bool DistributedTestHarness::AddChunkserver(
     auto server =
         std::make_unique<
             chunkserver::Chunkserver>(
-                server_id,
-                directory.string());
+            server_id,
+            directory.string());
 
     if (!server->Initialize()) {
         return false;
@@ -146,8 +146,8 @@ bool DistributedTestHarness::RestartChunkserver(
     auto server =
         std::make_unique<
             chunkserver::Chunkserver>(
-                server_id,
-                path_it->second.string());
+            server_id,
+            path_it->second.string());
 
     if (!server->Initialize()) {
         return false;
@@ -597,7 +597,7 @@ DistributedTestHarness::GetLiveServers(
         if (master_.IsChunkserverAlive(
                 server_id,
                 now_ms) &&
-            master_.GetRecoveryManager()
+            master_.GetReReplicationManager()
                 .HasChunkserver(server_id)) {
             live.push_back(server_id);
         }

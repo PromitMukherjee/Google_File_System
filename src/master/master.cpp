@@ -215,6 +215,24 @@ Master::GetFileInfo(
     return metadata_.GetFile(path);
 }
 
+bool Master::UpdateFileSize(
+    const std::string& path,
+    std::uint64_t size) {
+    if (!metadata_.FileExists(path)) {
+        return false;
+    }
+
+    if (!AppendOperation(
+            recovery::OperationType::UpdateFileSize,
+            {path, std::to_string(size)})) {
+        return false;
+    }
+
+    return metadata_.UpdateFileSize(
+        path,
+        size);
+}
+
 bool Master::CreateSnapshot(
     const std::string& source_path,
     const std::string& snapshot_path) {
@@ -677,6 +695,25 @@ bool Master::SetChunkVersion(
         version);
 }
 
+bool Master::SetChunkSize(
+    ChunkHandle handle,
+    std::uint64_t size) {
+    if (!metadata_.ChunkExists(handle)) {
+        return false;
+    }
+
+    if (!AppendOperation(
+            recovery::OperationType::SetChunkSize,
+            {std::to_string(handle),
+             std::to_string(size)})) {
+        return false;
+    }
+
+    return metadata_.SetChunkSize(
+        handle,
+        size);
+}
+
 std::optional<ChunkHandle>
 Master::AllocateChunk(
     const std::string& path) {
@@ -942,7 +979,6 @@ Master::GetRecoveryManager() const noexcept {
 
 bool Master::Initialize() {
     if (persistence_directory_.empty()) {
-        initialized_ = true;
         return true;
     }
 
@@ -996,7 +1032,6 @@ bool Master::Initialize() {
     replica_manager_.Clear();
     orphan_chunk_manager_.Clear();
 
-    initialized_ = true;
     return true;
 }
 

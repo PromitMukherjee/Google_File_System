@@ -418,6 +418,7 @@ add_library(
 
     src/client/metadata/master_client.cpp
     src/client/metadata/chunk_location_cache.cpp
+    src/client/retry/retry_policy.cpp
 
     # --------------------------------------------------------
     # CLIENT — IO
@@ -425,6 +426,7 @@ add_library(
 
     src/client/io/reader.cpp
     src/client/io/writer.cpp
+    src/client/io/record_appender.cpp
 
     # --------------------------------------------------------
     # CLIENT
@@ -695,6 +697,25 @@ target_link_libraries(
 )
 
 # ============================================================
+# PHASE 12 TEST
+# Record Append
+# ============================================================
+
+add_executable(
+    gfs_phase12_test
+
+    tests/phase12_test.cpp
+)
+
+target_link_libraries(
+    gfs_phase12_test
+    PRIVATE
+
+        gfs_core
+        GTest::gtest_main
+)
+
+# ============================================================
 # TEST CONFIGURATION
 # ============================================================
 
@@ -711,6 +732,7 @@ foreach(
         gfs_phase9_test
         gfs_phase10_test
         gfs_phase11_test
+        gfs_phase12_test
 )
 
     target_include_directories(

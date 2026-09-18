@@ -96,6 +96,129 @@ bool MutationManager::ExecutePrimaryMutation(
     return true;
 }
 
+MutationManager::RecordAppendResult
+MutationManager::ExecutePrimaryRecordAppend(
+    ChunkHandle handle,
+    ChunkVersion version,
+    const std::string& data,
+    const PropagationFunction&
+        propagation_function) {
+    RecordAppendResult result;
+
+    if (handle == 0 ||
+        version == 0 ||
+        data.empty() ||
+        data.size() >
+            gfs::constants::kChunkSize / 4U) {
+        return result;
+    }
+
+    if (!chunkserver_.ChunkExists(handle) &&
+        !chunkserver_.CreateChunk(handle)) {
+        return result;
+    }
+
+    const std::uint64_t current_size =
+        chunkserver_.GetChunkSize(handle);
+
+    const std::uint64_t data_size =
+        static_cast<std::uint64_t>(data.size());
+
+    if (current_size > gfs::constants::kChunkSize ||
+        data_size >
+            gfs::constants::kChunkSize - current_size) {
+        const std::uint64_t padding_size =
+            gfs::constants::kChunkSize - current_size;
+
+        if (padding_size > 0) {
+            const std::string padding(
+                static_cast<std::size_t>(padding_size),
+                '\0');
+
+            {
+                std::lock_guard lock(mutex_);
+
+                const std::uint64_t mutation_id =
+                    AssignMutationIdLocked(handle);
+
+                if (mutation_id == 0) {
+                    return result;
+                }
+
+                Mutation mutation;
+                mutation.chunk_handle = handle;
+                mutation.chunk_version = version;
+                mutation.mutation_id = mutation_id;
+                mutation.offset = current_size;
+                mutation.data = padding;
+
+                if (!ApplyMutationLocked(mutation)) {
+                    return result;
+                }
+
+                if (propagation_function &&
+                    !propagation_function(mutation)) {
+                    result.status =
+                        RecordAppendStatus::Failed;
+                    result.chunk_size =
+                        chunkserver_.GetChunkSize(handle);
+                    return result;
+                }
+            }
+        }
+
+        result.status =
+            RecordAppendStatus::RetryNextChunk;
+        result.chunk_size =
+            chunkserver_.GetChunkSize(handle);
+        return result;
+    }
+
+    const std::uint64_t offset = current_size;
+
+    Mutation mutation;
+    mutation.chunk_handle = handle;
+    mutation.chunk_version = version;
+    mutation.offset = offset;
+    mutation.data = data;
+
+    {
+        std::lock_guard lock(mutex_);
+
+        const std::uint64_t mutation_id =
+            AssignMutationIdLocked(handle);
+
+        if (mutation_id == 0) {
+            return result;
+        }
+
+        mutation.mutation_id = mutation_id;
+
+        if (!ApplyMutationLocked(mutation)) {
+            return result;
+        }
+
+        if (propagation_function &&
+            !propagation_function(mutation)) {
+            result.status =
+                RecordAppendStatus::Failed;
+            result.offset = offset;
+            result.chunk_size =
+                chunkserver_.GetChunkSize(handle);
+            result.bytes_appended = data.size();
+            return result;
+        }
+    }
+
+    result.status = RecordAppendStatus::Success;
+    result.offset = offset;
+    result.chunk_size =
+        chunkserver_.GetChunkSize(handle);
+    result.bytes_appended = data.size();
+
+    return result;
+}
+
 std::uint64_t
 MutationManager::LastAppliedMutationId(
     ChunkHandle handle) const {

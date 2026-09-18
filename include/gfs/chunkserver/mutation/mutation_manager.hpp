@@ -17,6 +17,19 @@ namespace mutation {
 
 class MutationManager {
 public:
+    enum class RecordAppendStatus {
+        Success,
+        RetryNextChunk,
+        Failed
+    };
+
+    struct RecordAppendResult {
+        RecordAppendStatus status = RecordAppendStatus::Failed;
+        std::uint64_t offset = 0;
+        std::uint64_t chunk_size = 0;
+        std::size_t bytes_appended = 0;
+    };
+
     using PropagationFunction =
         std::function<bool(const Mutation&)>;
 
@@ -40,6 +53,14 @@ public:
         ChunkHandle handle,
         ChunkVersion version,
         std::uint64_t offset,
+        const std::string& data,
+        const PropagationFunction&
+            propagation_function = {});
+
+    [[nodiscard]] RecordAppendResult
+    ExecutePrimaryRecordAppend(
+        ChunkHandle handle,
+        ChunkVersion version,
         const std::string& data,
         const PropagationFunction&
             propagation_function = {});

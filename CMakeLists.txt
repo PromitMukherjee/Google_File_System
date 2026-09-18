@@ -457,6 +457,12 @@ add_library(
     # --------------------------------------------------------
 
     src/client/gfs_client.cpp
+
+    # --------------------------------------------------------
+    # PHASE 16 — BENCHMARKING
+    # --------------------------------------------------------
+
+    src/benchmark/benchmark.cpp
 )
 
 # ============================================================
@@ -797,6 +803,65 @@ target_link_libraries(
 )
 
 # ============================================================
+# PHASE 16 TEST
+# Benchmarks + Paper Comparison
+# ============================================================
+
+add_executable(
+    gfs_phase16_test
+
+    tests/phase16_test.cpp
+)
+
+target_link_libraries(
+    gfs_phase16_test
+    PRIVATE
+
+        gfs_core
+        GTest::gtest_main
+)
+
+# ============================================================
+# PHASE 16 BENCHMARK EXECUTABLE
+# ============================================================
+
+add_executable(
+    gfs_benchmark
+
+    src/benchmark/main.cpp
+)
+
+target_link_libraries(
+    gfs_benchmark
+    PRIVATE
+
+        gfs_core
+)
+
+target_include_directories(
+    gfs_benchmark
+    PRIVATE
+
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+        ${GENERATED_DIR}
+)
+
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+
+    target_compile_options(
+        gfs_benchmark
+        PRIVATE
+
+            -Wall
+            -Wextra
+            -Wpedantic
+            -Wconversion
+            -Wshadow
+    )
+
+endif()
+
+# ============================================================
 # TEST CONFIGURATION
 # ============================================================
 
@@ -817,6 +882,7 @@ foreach(
         gfs_phase13_test
         gfs_phase14_test
         gfs_phase15_test
+        gfs_phase16_test
 )
 
     target_include_directories(

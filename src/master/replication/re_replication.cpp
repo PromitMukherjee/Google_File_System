@@ -4,11 +4,15 @@
 #include "gfs/master/master.hpp"
 
 #include <algorithm>
+#include <chrono>
+#include <grpcpp/grpcpp.h>
 #include <limits>
 #include <mutex>
 #include <unordered_set>
 #include <utility>
 #include <vector>
+
+#include "chunkserver.grpc.pb.h"
 
 namespace gfs::master::replication {
 
@@ -48,7 +52,8 @@ bool ReReplicationManager::UnregisterChunkserver(
 
     std::unique_lock lock(mutex_);
 
-    return chunkservers_.erase(server_id) > 0;
+    return chunkservers_.erase(
+        server_id) > 0;
 }
 
 bool ReReplicationManager::HasChunkserver(
@@ -59,7 +64,51 @@ bool ReReplicationManager::HasChunkserver(
 
     std::shared_lock lock(mutex_);
 
-    return chunkservers_.contains(server_id);
+    return chunkservers_.contains(server_id) ||
+           endpoints_.contains(server_id);
+}
+
+bool ReReplicationManager::RegisterChunkserverEndpoint(
+    ServerId server_id,
+    std::string address) {
+    if (server_id == 0 ||
+        address.empty()) {
+        return false;
+    }
+
+    std::unique_lock lock(mutex_);
+
+    endpoints_[server_id] =
+        std::move(address);
+
+    return true;
+}
+
+bool ReReplicationManager::UnregisterChunkserverEndpoint(
+    ServerId server_id) {
+    if (server_id == 0) {
+        return false;
+    }
+
+    std::unique_lock lock(mutex_);
+
+    return endpoints_.erase(
+        server_id) > 0;
+}
+
+std::optional<std::string>
+ReReplicationManager::GetChunkserverEndpoint(
+    ServerId server_id) const {
+    std::shared_lock lock(mutex_);
+
+    const auto it =
+        endpoints_.find(server_id);
+
+    if (it == endpoints_.end()) {
+        return std::nullopt;
+    }
+
+    return it->second;
 }
 
 std::size_t
@@ -77,29 +126,11 @@ ReReplicationManager::GetDesiredReplicationFactor(
         master_.GetChunkReplicationFactor(
             handle);
 
-    if (factor.has_value() &&
-        *factor != 0) {
-        return *factor;
+    if (!factor.has_value()) {
+        return 0;
     }
 
-    const std::size_t configured =
-        master_.GetPlacementPolicy()
-            .GetReplicationFactor();
-
-    if (configured == 0) {
-        return 1;
-    }
-
-    if (configured >
-        static_cast<std::size_t>(
-            std::numeric_limits<
-                std::uint32_t>::max())) {
-        return std::numeric_limits<
-            std::uint32_t>::max();
-    }
-
-    return static_cast<std::uint32_t>(
-        configured);
+    return *factor;
 }
 
 bool ReReplicationManager::IsHealthyCurrentReplica(
@@ -126,12 +157,13 @@ bool ReReplicationManager::IsHealthyCurrentReplica(
     auto* chunkserver =
         GetChunkserver(server_id);
 
-    if (chunkserver == nullptr ||
-        !chunkserver->ChunkExists(handle)) {
-        return false;
+    if (chunkserver != nullptr) {
+        return chunkserver->ChunkExists(
+            handle);
     }
 
-    return true;
+    return GetChunkserverEndpoint(
+        server_id).has_value();
 }
 
 std::vector<ServerId>
@@ -152,7 +184,8 @@ ReReplicationManager::GetHealthyCurrentReplicas(
                 handle,
                 server_id,
                 now_ms)) {
-            healthy.push_back(server_id);
+            healthy.push_back(
+                server_id);
         }
     }
 
@@ -179,11 +212,13 @@ bool ReReplicationManager::NeedsReReplication(
 
     const std::size_t desired =
         static_cast<std::size_t>(
-            GetDesiredReplicationFactor(handle));
+            GetDesiredReplicationFactor(
+                handle));
 
     return GetHealthyReplicaCount(
                handle,
-               now_ms) < desired;
+               now_ms) <
+           desired;
 }
 
 std::optional<ServerId>
@@ -237,7 +272,8 @@ ReReplicationManager::GetRecoveryDestinations(
 
     const std::size_t desired =
         static_cast<std::size_t>(
-            GetDesiredReplicationFactor(handle));
+            GetDesiredReplicationFactor(
+                handle));
 
     const std::size_t healthy_count =
         GetHealthyReplicaCount(
@@ -309,7 +345,10 @@ ReReplicationManager::GetRecoveryDestinations(
     PlacementRequest request;
 
     request.handle = handle;
-    request.replication_factor = needed;
+    request.replication_factor =
+        static_cast<std::uint32_t>(
+            needed);
+
     request.candidates =
         std::move(candidates);
 
@@ -337,30 +376,152 @@ bool ReReplicationManager::TransferReplica(
         GetChunkserver(
             destination_server_id);
 
-    if (source == nullptr ||
-        destination == nullptr ||
-        !source->ChunkExists(handle)) {
+    if (source != nullptr &&
+        destination != nullptr) {
+        if (!source->ChunkExists(
+                handle)) {
+            return false;
+        }
+
+        return source->GetReplicaSender()
+            .Send(
+                handle,
+                destination_server_id,
+                [destination](
+                    ServerId target,
+                    ChunkHandle target_handle,
+                    const std::string& data) {
+                    if (target !=
+                        destination->GetServerId()) {
+                        return false;
+                    }
+
+                    return destination
+                        ->GetReplicaReceiver()
+                        .Receive(
+                            target_handle,
+                            data);
+                });
+    }
+
+    const auto source_endpoint =
+        GetChunkserverEndpoint(
+            source_server_id);
+
+    const auto destination_endpoint =
+        GetChunkserverEndpoint(
+            destination_server_id);
+
+    if (!source_endpoint.has_value() ||
+        !destination_endpoint.has_value()) {
         return false;
     }
 
-    return source->GetReplicaSender().Send(
-        handle,
-        destination_server_id,
-        [destination](
-            ServerId target_server_id,
-            ChunkHandle target_handle,
-            const std::string& data) {
-            if (target_server_id !=
-                destination->GetServerId()) {
-                return false;
-            }
+    const auto source_channel =
+        ::grpc::CreateChannel(
+            *source_endpoint,
+            ::grpc::InsecureChannelCredentials());
 
-            return destination
-                ->GetReplicaReceiver()
-                .Receive(
-                    target_handle,
-                    data);
-        });
+    const auto destination_channel =
+        ::grpc::CreateChannel(
+            *destination_endpoint,
+            ::grpc::InsecureChannelCredentials());
+
+    auto source_stub =
+        ::gfs::protocol::ChunkserverService::
+            NewStub(source_channel);
+
+    auto destination_stub =
+        ::gfs::protocol::ChunkserverService::
+            NewStub(destination_channel);
+
+    ::gfs::protocol::TransferChunkRequest
+        transfer_request;
+
+    transfer_request.set_chunk_handle(
+        handle);
+
+    transfer_request.set_chunk_version(1);
+    transfer_request.set_offset(0);
+    transfer_request.set_length(0);
+
+    ::gfs::protocol::TransferChunkResponse
+        transfer_response;
+
+    ::grpc::ClientContext source_context;
+
+    source_context.set_deadline(
+        std::chrono::system_clock::now() +
+        std::chrono::seconds(5));
+
+    const auto source_status =
+        source_stub->TransferChunk(
+            &source_context,
+            transfer_request,
+            &transfer_response);
+
+    if (!source_status.ok() ||
+        !transfer_response.success()) {
+        return false;
+    }
+
+    ::gfs::protocol::CreateReplicaRequest
+        create_request;
+
+    create_request.set_chunk_handle(
+        handle);
+
+    create_request.set_chunk_version(1);
+
+    ::gfs::protocol::CreateReplicaResponse
+        create_response;
+
+    ::grpc::ClientContext create_context;
+
+    create_context.set_deadline(
+        std::chrono::system_clock::now() +
+        std::chrono::seconds(5));
+
+    const auto create_status =
+        destination_stub->CreateReplica(
+            &create_context,
+            create_request,
+            &create_response);
+
+    if (!create_status.ok() ||
+        !create_response.success()) {
+        return false;
+    }
+
+    ::gfs::protocol::WriteChunkRequest
+        write_request;
+
+    write_request.set_chunk_handle(
+        handle);
+
+    write_request.set_chunk_version(1);
+    write_request.set_offset(0);
+
+    write_request.set_data(
+        transfer_response.data());
+
+    ::gfs::protocol::WriteChunkResponse
+        write_response;
+
+    ::grpc::ClientContext write_context;
+
+    write_context.set_deadline(
+        std::chrono::system_clock::now() +
+        std::chrono::seconds(5));
+
+    const auto write_status =
+        destination_stub->WriteChunk(
+            &write_context,
+            write_request,
+            &write_response);
+
+    return write_status.ok() &&
+           write_response.success();
 }
 
 bool ReReplicationManager::
@@ -387,7 +548,8 @@ DeleteChunkFromChunkservers(
                 server_id);
 
             if (server != nullptr) {
-                servers.push_back(server);
+                servers.push_back(
+                    server);
             }
         }
     }
@@ -604,7 +766,8 @@ RecoverFailedChunkservers(
         if (RecoverChunk(
                 handle,
                 now_ms)) {
-            recovered.push_back(handle);
+            recovered.push_back(
+                handle);
         }
     }
 
@@ -628,7 +791,8 @@ ReReplicationManager::RecoverAll(
             RecoverChunk(
                 handle,
                 now_ms)) {
-            recovered.push_back(handle);
+            recovered.push_back(
+                handle);
         }
     }
 

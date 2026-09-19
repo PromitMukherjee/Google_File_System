@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <optional>
 #include <shared_mutex>
+#include <string>
 #include <unordered_map>
 #include <vector>
 
@@ -37,6 +38,17 @@ public:
         ServerId server_id);
 
     [[nodiscard]] bool HasChunkserver(
+        ServerId server_id) const;
+
+    [[nodiscard]] bool RegisterChunkserverEndpoint(
+        ServerId server_id,
+        std::string address);
+
+    [[nodiscard]] bool UnregisterChunkserverEndpoint(
+        ServerId server_id);
+
+    [[nodiscard]] std::optional<std::string>
+    GetChunkserverEndpoint(
         ServerId server_id) const;
 
     [[nodiscard]] std::size_t
@@ -106,7 +118,13 @@ private:
 
     std::unordered_map<
         ServerId,
-        chunkserver::Chunkserver*> chunkservers_;
+        chunkserver::Chunkserver*>
+        chunkservers_;
+
+    std::unordered_map<
+        ServerId,
+        std::string>
+        endpoints_;
 };
 
 }  // namespace replication

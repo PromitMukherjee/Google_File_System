@@ -5,6 +5,8 @@
 #include "gfs/common/types.hpp"
 #include "master.grpc.pb.h"
 
+#include <utility>
+
 namespace gfs::chunkserver::heartbeat {
 
 HeartbeatClient::HeartbeatClient(
@@ -20,12 +22,17 @@ HeartbeatClient::BuildHeartbeatRequest(
     request.set_server_id(
         chunkserver_.GetServerId());
 
-    request.set_timestamp_ms(timestamp_ms);
+    request.set_timestamp_ms(
+        timestamp_ms);
+
+    request.set_server_address(
+        server_address_);
 
     const auto handles =
         chunkserver_.ListChunks();
 
-    for (const ChunkHandle handle : handles) {
+    for (const ChunkHandle handle :
+         handles) {
         if (handle == 0) {
             continue;
         }
@@ -33,11 +40,19 @@ HeartbeatClient::BuildHeartbeatRequest(
         auto* report =
             request.add_chunks();
 
-        report->set_chunk_handle(handle);
+        report->set_chunk_handle(
+            handle);
+
         report->set_version(1);
     }
 
     return request;
+}
+
+void HeartbeatClient::SetServerAddress(
+    std::string server_address) {
+    server_address_ =
+        std::move(server_address);
 }
 
 bool HeartbeatClient::SendHeartbeat(
@@ -66,10 +81,17 @@ bool HeartbeatClient::SendHeartbeat(
     }
 
     const auto request =
-        BuildHeartbeatRequest(timestamp_ms);
+        BuildHeartbeatRequest(
+            timestamp_ms);
 
-    ::gfs::protocol::HeartbeatResponse response;
+    ::gfs::protocol::HeartbeatResponse
+        response;
+
     ::grpc::ClientContext context;
+
+    context.set_deadline(
+        std::chrono::system_clock::now() +
+        std::chrono::seconds(3));
 
     const ::grpc::Status status =
         stub->Heartbeat(

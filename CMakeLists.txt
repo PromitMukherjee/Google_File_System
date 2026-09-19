@@ -308,6 +308,13 @@ add_library(
     src/protocol/client_service.cpp
 
     # --------------------------------------------------------
+    # PHASE 17 — NETWORK SERVER INFRASTRUCTURE
+    # --------------------------------------------------------
+
+    src/network/master_server.cpp
+    src/network/chunkserver_server.cpp
+
+    # --------------------------------------------------------
     # MASTER — METADATA
     # --------------------------------------------------------
 
@@ -352,14 +359,12 @@ add_library(
 
     # --------------------------------------------------------
     # MASTER — RECOVERY
-    # Phase 10
     # --------------------------------------------------------
 
     src/master/recovery/recovery_manager.cpp
 
     # --------------------------------------------------------
     # MASTER — PERSISTENCE / RECOVERY
-    # Phase 11
     # --------------------------------------------------------
 
     src/master/recovery/operation_log.cpp
@@ -367,7 +372,6 @@ add_library(
 
     # --------------------------------------------------------
     # MASTER — GARBAGE COLLECTION
-    # Phase 14
     # --------------------------------------------------------
 
     src/master/garbage_collection/orphan_chunk_manager.cpp
@@ -375,7 +379,6 @@ add_library(
 
     # --------------------------------------------------------
     # MASTER — REPLICATION REBALANCING
-    # Phase 14
     # --------------------------------------------------------
 
     src/master/replication/rebalancer.cpp
@@ -709,7 +712,6 @@ target_link_libraries(
 
 # ============================================================
 # PHASE 11 TEST
-# Operation Log + Checkpoint + Master Recovery
 # ============================================================
 
 add_executable(
@@ -728,7 +730,6 @@ target_link_libraries(
 
 # ============================================================
 # PHASE 12 TEST
-# Record Append
 # ============================================================
 
 add_executable(
@@ -747,7 +748,6 @@ target_link_libraries(
 
 # ============================================================
 # PHASE 13 TEST
-# Snapshot / Copy-On-Write
 # ============================================================
 
 add_executable(
@@ -766,7 +766,6 @@ target_link_libraries(
 
 # ============================================================
 # PHASE 14 TEST
-# Garbage Collection + Rebalancing
 # ============================================================
 
 add_executable(
@@ -785,7 +784,6 @@ target_link_libraries(
 
 # ============================================================
 # PHASE 15 TEST
-# Failure Injection + Distributed Testing
 # ============================================================
 
 add_executable(
@@ -804,7 +802,6 @@ target_link_libraries(
 
 # ============================================================
 # PHASE 16 TEST
-# Benchmarks + Paper Comparison
 # ============================================================
 
 add_executable(
@@ -815,6 +812,100 @@ add_executable(
 
 target_link_libraries(
     gfs_phase16_test
+    PRIVATE
+
+        gfs_core
+        GTest::gtest_main
+)
+
+# ============================================================
+# PHASE 17 NETWORK EXECUTABLES
+# ============================================================
+
+add_executable(
+    gfs-master
+
+    src/bin/gfs_master_main.cpp
+)
+
+target_link_libraries(
+    gfs-master
+    PRIVATE
+
+        gfs_core
+)
+
+add_executable(
+    gfs-chunkserver
+
+    src/bin/gfs_chunkserver_main.cpp
+)
+
+target_link_libraries(
+    gfs-chunkserver
+    PRIVATE
+
+        gfs_core
+)
+
+add_executable(
+    gfs-client
+
+    src/bin/gfs_client_main.cpp
+)
+
+target_link_libraries(
+    gfs-client
+    PRIVATE
+
+        gfs_core
+)
+
+foreach(
+    NETWORK_TARGET
+
+        gfs-master
+        gfs-chunkserver
+        gfs-client
+)
+
+    target_include_directories(
+        ${NETWORK_TARGET}
+        PRIVATE
+
+            ${CMAKE_CURRENT_SOURCE_DIR}/include
+            ${GENERATED_DIR}
+    )
+
+    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+
+        target_compile_options(
+            ${NETWORK_TARGET}
+            PRIVATE
+
+                -Wall
+                -Wextra
+                -Wpedantic
+                -Wconversion
+                -Wshadow
+        )
+
+    endif()
+
+endforeach()
+
+# ============================================================
+# PHASE 17 TEST
+# ============================================================
+
+add_executable(
+    gfs_phase17_test
+
+    tests/phase17_test.cpp
+)
+
+target_link_libraries(
+    gfs_phase17_test
     PRIVATE
 
         gfs_core
@@ -883,6 +974,7 @@ foreach(
         gfs_phase14_test
         gfs_phase15_test
         gfs_phase16_test
+        gfs_phase17_test
 )
 
     target_include_directories(

@@ -14,12 +14,18 @@ public:
     explicit HeartbeatClient(
         Chunkserver& chunkserver);
 
-    HeartbeatClient(const HeartbeatClient&) = delete;
-    HeartbeatClient& operator=(const HeartbeatClient&) = delete;
+    HeartbeatClient(
+        const HeartbeatClient&) = delete;
+
+    HeartbeatClient& operator=(
+        const HeartbeatClient&) = delete;
 
     [[nodiscard]] ::gfs::protocol::HeartbeatRequest
     BuildHeartbeatRequest(
         std::uint64_t timestamp_ms) const;
+
+    void SetServerAddress(
+        std::string server_address);
 
     [[nodiscard]] bool
     SendHeartbeat(
@@ -28,6 +34,8 @@ public:
 
 private:
     Chunkserver& chunkserver_;
+
+    std::string server_address_;
 };
 
 }  // namespace gfs::chunkserver::heartbeat

@@ -3,6 +3,7 @@
 #include "gfs/common/types.hpp"
 
 #include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <optional>
 #include <string>
@@ -14,8 +15,9 @@ struct ChunkLocation {
     ServerId server_id = 0;
     std::string address;
 
-    friend bool operator==(const ChunkLocation& lhs,
-                           const ChunkLocation& rhs) = default;
+    friend bool operator==(
+        const ChunkLocation& lhs,
+        const ChunkLocation& rhs) = default;
 };
 
 struct ChunkMetadata {
@@ -58,11 +60,17 @@ public:
         ChunkLookup chunk_lookup,
         ChunkAllocation chunk_allocator);
 
-    MasterClient(const MasterClient&) = delete;
-    MasterClient& operator=(const MasterClient&) = delete;
+    MasterClient(
+        const MasterClient&) = delete;
 
-    MasterClient(MasterClient&&) noexcept = default;
-    MasterClient& operator=(MasterClient&&) noexcept = default;
+    MasterClient& operator=(
+        const MasterClient&) = delete;
+
+    MasterClient(
+        MasterClient&&) noexcept = default;
+
+    MasterClient& operator=(
+        MasterClient&&) noexcept = default;
 
     ~MasterClient() = default;
 
@@ -81,8 +89,8 @@ public:
     void SetChunkAllocator(
         ChunkAllocation allocator);
 
-    [[nodiscard]] bool IsConfigured()
-        const noexcept;
+    [[nodiscard]] bool
+    IsConfigured() const noexcept;
 
     [[nodiscard]] std::optional<FileMetadata>
     LookupFile(
@@ -107,6 +115,16 @@ public:
     AllocateChunk(
         const FilePath& path,
         ChunkIndex chunk_index) const;
+
+    [[nodiscard]] bool
+    CreateFile(
+        const FilePath& path,
+        std::uint32_t replication_factor = 0) const;
+
+    [[nodiscard]] bool
+    UpdateFileSize(
+        const FilePath& path,
+        std::uint64_t size) const;
 
 private:
     std::string master_address_;

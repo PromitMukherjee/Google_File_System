@@ -1,4 +1,3 @@
-// proto/master.proto
 syntax = "proto3";
 
 package gfs.protocol;
@@ -23,6 +22,7 @@ message ChunkLocation {
     uint64 chunk_handle = 1;
     uint64 version = 2;
     repeated uint64 replica_server_ids = 3;
+    repeated string replica_addresses = 4;
 }
 
 message LeaseInfo {
@@ -92,6 +92,30 @@ message GetLeaseHolderResponse {
     LeaseInfo lease = 3;
 }
 
+message UpdateFileSizeRequest {
+    string path = 1;
+    uint64 size = 2;
+}
+
+message UpdateFileSizeResponse {
+    bool success = 1;
+    string error_message = 2;
+}
+
+message AllocateChunkRequest {
+    string path = 1;
+    uint32 replication_factor = 2;
+}
+
+message AllocateChunkResponse {
+    bool success = 1;
+    string error_message = 2;
+    uint64 chunk_handle = 3;
+    uint64 chunk_version = 4;
+    repeated uint64 replica_server_ids = 5;
+    repeated string replica_addresses = 6;
+}
+
 message ChunkInfoReport {
     uint64 chunk_handle = 1;
     uint64 version = 2;
@@ -101,6 +125,7 @@ message HeartbeatRequest {
     uint64 server_id = 1;
     uint64 timestamp_ms = 2;
     repeated ChunkInfoReport chunks = 3;
+    string server_address = 4;
 }
 
 message HeartbeatInstruction {
@@ -131,7 +156,14 @@ service MasterService {
     rpc DeleteFile(DeleteFileRequest) returns (DeleteFileResponse);
     rpc RenameFile(RenameFileRequest) returns (RenameFileResponse);
     rpc GetFileInfo(GetFileInfoRequest) returns (GetFileInfoResponse);
-    rpc GetChunkLocations(GetChunkLocationsRequest) returns (GetChunkLocationsResponse);
-    rpc GetLeaseHolder(GetLeaseHolderRequest) returns (GetLeaseHolderResponse);
-    rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse);
+    rpc GetChunkLocations(GetChunkLocationsRequest)
+        returns (GetChunkLocationsResponse);
+    rpc GetLeaseHolder(GetLeaseHolderRequest)
+        returns (GetLeaseHolderResponse);
+    rpc AllocateChunk(AllocateChunkRequest)
+        returns (AllocateChunkResponse);
+    rpc UpdateFileSize(UpdateFileSizeRequest)
+        returns (UpdateFileSizeResponse);
+    rpc Heartbeat(HeartbeatRequest)
+        returns (HeartbeatResponse);
 }

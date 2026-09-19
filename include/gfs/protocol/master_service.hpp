@@ -2,6 +2,8 @@
 
 #include <grpcpp/grpcpp.h>
 
+#include <mutex>
+
 #include "gfs/master/master.hpp"
 #include "master.grpc.pb.h"
 
@@ -56,6 +58,18 @@ public:
         ::gfs::protocol::GetLeaseHolderResponse* response
     ) override;
 
+    ::grpc::Status AllocateChunk(
+        ::grpc::ServerContext* context,
+        const ::gfs::protocol::AllocateChunkRequest* request,
+        ::gfs::protocol::AllocateChunkResponse* response
+    ) override;
+
+    ::grpc::Status UpdateFileSize(
+        ::grpc::ServerContext* context,
+        const ::gfs::protocol::UpdateFileSizeRequest* request,
+        ::gfs::protocol::UpdateFileSizeResponse* response
+    ) override;
+
     ::grpc::Status Heartbeat(
         ::grpc::ServerContext* context,
         const ::gfs::protocol::HeartbeatRequest* request,
@@ -63,6 +77,8 @@ public:
     ) override;
 
 private:
+    mutable std::mutex mutex_;
+
     ::gfs::master::Master* master_ = nullptr;
 };
 

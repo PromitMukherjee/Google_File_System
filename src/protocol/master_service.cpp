@@ -2,6 +2,12 @@
 
 #include "gfs/common/utils.hpp"
 
+#include <cstddef>
+#include <cstdint>
+#include <mutex>
+#include <string>
+#include <vector>
+
 namespace gfs::protocol {
 
 MasterServiceImpl::MasterServiceImpl(
@@ -11,83 +17,429 @@ MasterServiceImpl::MasterServiceImpl(
 
 void MasterServiceImpl::SetMaster(
     ::gfs::master::Master& master) noexcept {
+    std::lock_guard<std::mutex> lock(mutex_);
     master_ = &master;
 }
 
 ::grpc::Status MasterServiceImpl::CreateFile(
     ::grpc::ServerContext*,
-    const ::gfs::protocol::CreateFileRequest*,
-    ::gfs::protocol::CreateFileResponse* response
-) {
-    response->set_success(false);
-    response->set_error_message(
-        "Master metadata logic is not implemented in Phase 2"
-    );
+    const ::gfs::protocol::CreateFileRequest* request,
+    ::gfs::protocol::CreateFileResponse* response) {
+
+    response->Clear();
+
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    if (master_ == nullptr) {
+        response->set_success(false);
+        response->set_error_message(
+            "Master instance is not configured");
+        return ::grpc::Status::OK;
+    }
+
+    if (request == nullptr ||
+        request->path().empty()) {
+        response->set_success(false);
+        response->set_error_message(
+            "Invalid create-file request");
+        return ::grpc::Status::OK;
+    }
+
+    const bool success =
+        master_->CreateFile(
+            request->path(),
+            request->replication_factor());
+
+    response->set_success(success);
+
+    if (!success) {
+        response->set_error_message(
+            "Failed to create file");
+    }
 
     return ::grpc::Status::OK;
 }
 
 ::grpc::Status MasterServiceImpl::DeleteFile(
     ::grpc::ServerContext*,
-    const ::gfs::protocol::DeleteFileRequest*,
-    ::gfs::protocol::DeleteFileResponse* response
-) {
-    response->set_success(false);
-    response->set_error_message(
-        "Master metadata logic is not implemented in Phase 2"
-    );
+    const ::gfs::protocol::DeleteFileRequest* request,
+    ::gfs::protocol::DeleteFileResponse* response) {
+
+    response->Clear();
+
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    if (master_ == nullptr) {
+        response->set_success(false);
+        response->set_error_message(
+            "Master instance is not configured");
+        return ::grpc::Status::OK;
+    }
+
+    if (request == nullptr ||
+        request->path().empty()) {
+        response->set_success(false);
+        response->set_error_message(
+            "Invalid delete-file request");
+        return ::grpc::Status::OK;
+    }
+
+    const bool success =
+        master_->DeleteFile(
+            request->path());
+
+    response->set_success(success);
+
+    if (!success) {
+        response->set_error_message(
+            "Failed to delete file");
+    }
 
     return ::grpc::Status::OK;
 }
 
 ::grpc::Status MasterServiceImpl::RenameFile(
     ::grpc::ServerContext*,
-    const ::gfs::protocol::RenameFileRequest*,
-    ::gfs::protocol::RenameFileResponse* response
-) {
-    response->set_success(false);
-    response->set_error_message(
-        "Master metadata logic is not implemented in Phase 2"
-    );
+    const ::gfs::protocol::RenameFileRequest* request,
+    ::gfs::protocol::RenameFileResponse* response) {
+
+    response->Clear();
+
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    if (master_ == nullptr) {
+        response->set_success(false);
+        response->set_error_message(
+            "Master instance is not configured");
+        return ::grpc::Status::OK;
+    }
+
+    if (request == nullptr ||
+        request->source_path().empty() ||
+        request->destination_path().empty()) {
+        response->set_success(false);
+        response->set_error_message(
+            "Invalid rename request");
+        return ::grpc::Status::OK;
+    }
+
+    const bool success =
+        master_->RenameFile(
+            request->source_path(),
+            request->destination_path());
+
+    response->set_success(success);
+
+    if (!success) {
+        response->set_error_message(
+            "Failed to rename file");
+    }
 
     return ::grpc::Status::OK;
 }
 
 ::grpc::Status MasterServiceImpl::GetFileInfo(
     ::grpc::ServerContext*,
-    const ::gfs::protocol::GetFileInfoRequest*,
-    ::gfs::protocol::GetFileInfoResponse* response
-) {
-    response->set_success(false);
-    response->set_error_message(
-        "Master metadata logic is not implemented in Phase 2"
-    );
+    const ::gfs::protocol::GetFileInfoRequest* request,
+    ::gfs::protocol::GetFileInfoResponse* response) {
+
+    response->Clear();
+
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    if (master_ == nullptr) {
+        response->set_success(false);
+        response->set_error_message(
+            "Master instance is not configured");
+        return ::grpc::Status::OK;
+    }
+
+    if (request == nullptr ||
+        request->path().empty()) {
+        response->set_success(false);
+        response->set_error_message(
+            "Invalid file-info request");
+        return ::grpc::Status::OK;
+    }
+
+    const auto metadata =
+        master_->GetFileInfo(
+            request->path());
+
+    if (!metadata.has_value()) {
+        response->set_success(false);
+        response->set_error_message(
+            "File not found");
+        return ::grpc::Status::OK;
+    }
+
+    auto* output =
+        response->mutable_metadata();
+
+    output->set_path(
+        metadata->path);
+
+    output->set_size(
+        metadata->size);
+
+    output->set_replication_factor(
+        metadata->replication_factor);
+
+    /*
+     * FileMetadata does not expose a `chunks` member.
+     * Obtain the file's chunk handles through the Master API.
+     */
+    const auto chunks =
+        master_->GetFileChunks(
+            request->path());
+
+    for (const ChunkHandle handle :
+         chunks) {
+        output->add_chunk_handles(
+            handle);
+    }
+
+    response->set_success(true);
 
     return ::grpc::Status::OK;
 }
 
 ::grpc::Status MasterServiceImpl::GetChunkLocations(
     ::grpc::ServerContext*,
-    const ::gfs::protocol::GetChunkLocationsRequest*,
-    ::gfs::protocol::GetChunkLocationsResponse* response
-) {
-    response->set_success(false);
-    response->set_error_message(
-        "Master metadata logic is not implemented in Phase 2"
-    );
+    const ::gfs::protocol::GetChunkLocationsRequest* request,
+    ::gfs::protocol::GetChunkLocationsResponse* response) {
+
+    response->Clear();
+
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    if (master_ == nullptr) {
+        response->set_success(false);
+        response->set_error_message(
+            "Master instance is not configured");
+        return ::grpc::Status::OK;
+    }
+
+    if (request == nullptr ||
+        request->path().empty()) {
+        response->set_success(false);
+        response->set_error_message(
+            "Invalid chunk-location request");
+        return ::grpc::Status::OK;
+    }
+
+    const auto chunks =
+        master_->GetFileChunks(
+            request->path());
+
+    const std::size_t index =
+        static_cast<std::size_t>(
+            request->chunk_index());
+
+    if (index >= chunks.size()) {
+        response->set_success(false);
+        response->set_error_message(
+            "Chunk not found");
+        return ::grpc::Status::OK;
+    }
+
+    const ChunkHandle handle =
+        chunks[index];
+
+    const auto metadata =
+        master_->GetChunkInfo(handle);
+
+    if (!metadata.has_value()) {
+        response->set_success(false);
+        response->set_error_message(
+            "Chunk metadata not found");
+        return ::grpc::Status::OK;
+    }
+
+    auto* location =
+        response->mutable_location();
+
+    location->set_chunk_handle(
+        handle);
+
+    location->set_version(
+        metadata->version);
+
+    const auto replicas =
+        master_->GetChunkReplicas(handle);
+
+    for (const ServerId server_id :
+         replicas) {
+        location->add_replica_server_ids(
+            server_id);
+    }
+
+    response->set_success(true);
 
     return ::grpc::Status::OK;
 }
 
 ::grpc::Status MasterServiceImpl::GetLeaseHolder(
     ::grpc::ServerContext*,
-    const ::gfs::protocol::GetLeaseHolderRequest*,
-    ::gfs::protocol::GetLeaseHolderResponse* response
-) {
-    response->set_success(false);
-    response->set_error_message(
-        "Lease management is not implemented in Phase 2"
-    );
+    const ::gfs::protocol::GetLeaseHolderRequest* request,
+    ::gfs::protocol::GetLeaseHolderResponse* response) {
+
+    response->Clear();
+
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    if (master_ == nullptr) {
+        response->set_success(false);
+        response->set_error_message(
+            "Master instance is not configured");
+        return ::grpc::Status::OK;
+    }
+
+    if (request == nullptr ||
+        request->chunk_handle() == 0) {
+        response->set_success(false);
+        response->set_error_message(
+            "Invalid lease request");
+        return ::grpc::Status::OK;
+    }
+
+    const auto lease =
+        master_->GetLease(
+            request->chunk_handle());
+
+    if (!lease.has_value()) {
+        response->set_success(false);
+        response->set_error_message(
+            "Lease not found");
+        return ::grpc::Status::OK;
+    }
+
+    auto* output =
+        response->mutable_lease();
+
+    output->set_chunk_handle(
+        lease->chunk_handle);
+
+    output->set_primary_server_id(
+        lease->primary_server_id);
+
+    output->set_version(
+        lease->version);
+
+    output->set_expiration_time_ms(
+        lease->expiration_time_ms);
+
+    response->set_success(
+        master_->IsLeaseValid(
+            request->chunk_handle()));
+
+    if (!response->success()) {
+        response->set_error_message(
+            "Lease is no longer valid");
+    }
+
+    return ::grpc::Status::OK;
+}
+
+::grpc::Status MasterServiceImpl::AllocateChunk(
+    ::grpc::ServerContext*,
+    const ::gfs::protocol::AllocateChunkRequest* request,
+    ::gfs::protocol::AllocateChunkResponse* response) {
+
+    response->Clear();
+
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    if (master_ == nullptr) {
+        response->set_success(false);
+        response->set_error_message(
+            "Master instance is not configured");
+        return ::grpc::Status::OK;
+    }
+
+    if (request == nullptr ||
+        request->path().empty()) {
+        response->set_success(false);
+        response->set_error_message(
+            "Invalid allocate-chunk request");
+        return ::grpc::Status::OK;
+    }
+
+    const auto handle =
+        master_->AllocateChunk(
+            request->path());
+
+    if (!handle.has_value()) {
+        response->set_success(false);
+        response->set_error_message(
+            "Failed to allocate chunk");
+        return ::grpc::Status::OK;
+    }
+
+    response->set_chunk_handle(
+        *handle);
+
+    const auto metadata =
+        master_->GetChunkInfo(
+            *handle);
+
+    if (metadata.has_value()) {
+        response->set_chunk_version(
+            metadata->version);
+    } else {
+        response->set_chunk_version(1);
+    }
+
+    const auto replicas =
+        master_->GetChunkReplicas(
+            *handle);
+
+    for (const ServerId server_id :
+         replicas) {
+        response->add_replica_server_ids(
+            server_id);
+    }
+
+    response->set_success(true);
+
+    return ::grpc::Status::OK;
+}
+
+::grpc::Status MasterServiceImpl::UpdateFileSize(
+    ::grpc::ServerContext*,
+    const ::gfs::protocol::UpdateFileSizeRequest* request,
+    ::gfs::protocol::UpdateFileSizeResponse* response) {
+
+    response->Clear();
+
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    if (master_ == nullptr) {
+        response->set_success(false);
+        response->set_error_message(
+            "Master instance is not configured");
+        return ::grpc::Status::OK;
+    }
+
+    if (request == nullptr ||
+        request->path().empty()) {
+        response->set_success(false);
+        response->set_error_message(
+            "Invalid update-file-size request");
+        return ::grpc::Status::OK;
+    }
+
+    const bool success =
+        master_->UpdateFileSize(
+            request->path(),
+            request->size());
+
+    response->set_success(success);
+
+    if (!success) {
+        response->set_error_message(
+            "Failed to update file size");
+    }
 
     return ::grpc::Status::OK;
 }
@@ -95,8 +447,8 @@ void MasterServiceImpl::SetMaster(
 ::grpc::Status MasterServiceImpl::Heartbeat(
     ::grpc::ServerContext*,
     const ::gfs::protocol::HeartbeatRequest* request,
-    ::gfs::protocol::HeartbeatResponse* response
-) {
+    ::gfs::protocol::HeartbeatResponse* response) {
+
     response->Clear();
 
     if (master_ == nullptr) {
@@ -130,6 +482,7 @@ void MasterServiceImpl::SetMaster(
 
     for (const auto& report :
          request->chunks()) {
+
         if (report.chunk_handle() == 0 ||
             report.version() == 0) {
             response->set_success(false);
@@ -151,6 +504,7 @@ void MasterServiceImpl::SetMaster(
             request->server_id(),
             request->timestamp_ms(),
             chunks)) {
+
         response->set_success(false);
         response->set_error_message(
             "Heartbeat rejected");

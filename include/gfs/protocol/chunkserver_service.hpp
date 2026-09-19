@@ -2,6 +2,7 @@
 
 #include <grpcpp/grpcpp.h>
 
+#include "gfs/chunkserver/chunkserver.hpp"
 #include "chunkserver.grpc.pb.h"
 
 namespace gfs::protocol {
@@ -9,8 +10,13 @@ namespace gfs::protocol {
 class ChunkserverServiceImpl final
     : public ::gfs::protocol::ChunkserverService::Service {
 public:
-    ChunkserverServiceImpl() = default;
+    explicit ChunkserverServiceImpl(
+        ::gfs::chunkserver::Chunkserver& chunkserver) noexcept;
+
     ~ChunkserverServiceImpl() override = default;
+
+    void SetChunkserver(
+        ::gfs::chunkserver::Chunkserver& chunkserver) noexcept;
 
     ::grpc::Status ReadChunk(
         ::grpc::ServerContext* context,
@@ -53,6 +59,9 @@ public:
         const ::gfs::protocol::CreateReplicaRequest* request,
         ::gfs::protocol::CreateReplicaResponse* response
     ) override;
+
+private:
+    ::gfs::chunkserver::Chunkserver* chunkserver_ = nullptr;
 };
 
 }  // namespace gfs::protocol

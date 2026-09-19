@@ -185,10 +185,6 @@ void MasterServiceImpl::SetMaster(
     output->set_replication_factor(
         metadata->replication_factor);
 
-    /*
-     * FileMetadata does not expose a `chunks` member.
-     * Obtain the file's chunk handles through the Master API.
-     */
     const auto chunks =
         master_->GetFileChunks(
             request->path());
@@ -270,8 +266,27 @@ void MasterServiceImpl::SetMaster(
 
     for (const ServerId server_id :
          replicas) {
+
         location->add_replica_server_ids(
             server_id);
+
+        const auto endpoint =
+            master_->GetReReplicationManager()
+                .GetChunkserverEndpoint(
+                    server_id);
+
+        if (!endpoint.has_value() ||
+            endpoint->empty()) {
+            response->set_success(false);
+            response->set_error_message(
+                "Missing chunkserver endpoint");
+            response->clear_location();
+
+            return ::grpc::Status::OK;
+        }
+
+        location->add_replica_addresses(
+            *endpoint);
     }
 
     response->set_success(true);
@@ -390,14 +405,87 @@ void MasterServiceImpl::SetMaster(
         response->set_chunk_version(1);
     }
 
-    const auto replicas =
-        master_->GetChunkReplicas(
+    /*
+     * Master::AllocateChunk() creates the metadata object but does
+     * not select/register its physical replicas. For the network RPC,
+     * select the currently live chunkservers and register the
+     * resulting placement before returning their locations.
+     */
+    const auto replication_factor =
+        master_->GetChunkReplicationFactor(
             *handle);
+
+    if (!replication_factor.has_value() ||
+        *replication_factor == 0) {
+        response->set_success(false);
+        response->set_error_message(
+            "Invalid chunk replication factor");
+        return ::grpc::Status::OK;
+    }
+
+    const auto live_servers =
+        master_->GetHeartbeatManager()
+            .GetLiveServers();
+
+    std::vector<
+        ::gfs::master::replication::PlacementCandidate>
+        candidates;
+
+    candidates.reserve(
+        live_servers.size());
+
+    for (const ServerId server_id :
+         live_servers) {
+        candidates.push_back(
+            ::gfs::master::replication::PlacementCandidate{
+                server_id,
+                master_->GetReplicaManager()
+                    .GetChunksForServer(
+                        server_id)
+                    .size()});
+    }
+
+    const auto replicas =
+        master_->PlaceChunkReplicas(
+            *handle,
+            candidates);
+
+    if (replicas.size() !=
+        static_cast<std::size_t>(
+            *replication_factor)) {
+        response->set_success(false);
+        response->set_error_message(
+            "Unable to place requested chunk replicas");
+        response->clear_replica_server_ids();
+        response->clear_replica_addresses();
+
+        return ::grpc::Status::OK;
+    }
 
     for (const ServerId server_id :
          replicas) {
+
         response->add_replica_server_ids(
             server_id);
+
+        const auto endpoint =
+            master_->GetReReplicationManager()
+                .GetChunkserverEndpoint(
+                    server_id);
+
+        if (!endpoint.has_value() ||
+            endpoint->empty()) {
+            response->set_success(false);
+            response->set_error_message(
+                "Missing chunkserver endpoint");
+            response->clear_replica_server_ids();
+            response->clear_replica_addresses();
+
+            return ::grpc::Status::OK;
+        }
+
+        response->add_replica_addresses(
+            *endpoint);
     }
 
     response->set_success(true);
@@ -512,6 +600,27 @@ void MasterServiceImpl::SetMaster(
             ::gfs::UnixTimeMillis());
 
         return ::grpc::Status::OK;
+    }
+
+    /*
+     * Phase 1-16 heartbeat callers do not provide a network endpoint.
+     * Preserve their successful heartbeat behavior while registering
+     * the endpoint whenever the Phase-17 network heartbeat provides one.
+     */
+    if (!request->server_address().empty()) {
+        if (!master_->GetReReplicationManager()
+                .RegisterChunkserverEndpoint(
+                    request->server_id(),
+                    request->server_address())) {
+
+            response->set_success(false);
+            response->set_error_message(
+                "Chunkserver endpoint registration failed");
+            response->set_master_timestamp_ms(
+                ::gfs::UnixTimeMillis());
+
+            return ::grpc::Status::OK;
+        }
     }
 
     response->set_success(true);

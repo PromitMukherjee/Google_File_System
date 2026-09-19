@@ -32,7 +32,8 @@ std::optional<std::uint16_t> FindAvailableTcpPort() {
 
     sockaddr_in address{};
     address.sin_family = AF_INET;
-    address.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    address.sin_addr.s_addr =
+        htonl(INADDR_LOOPBACK);
     address.sin_port = htons(0);
 
     if (::bind(
@@ -44,7 +45,8 @@ std::optional<std::uint16_t> FindAvailableTcpPort() {
     }
 
     socklen_t address_length =
-        static_cast<socklen_t>(sizeof(address));
+        static_cast<socklen_t>(
+            sizeof(address));
 
     if (::getsockname(
             socket_fd,
@@ -107,8 +109,9 @@ bool ChunkserverServer::Start() {
         (port_ == 0);
 
     if (requested_ephemeral_port) {
-        const std::optional<std::uint16_t> selected_port =
-            FindAvailableTcpPort();
+        const std::optional<std::uint16_t>
+            selected_port =
+                FindAvailableTcpPort();
 
         if (!selected_port.has_value()) {
             return false;
@@ -120,7 +123,8 @@ bool ChunkserverServer::Start() {
     ::grpc::ServerBuilder builder;
 
     const std::string endpoint =
-        host_ + ":" + std::to_string(port_);
+        host_ + ":" +
+        std::to_string(port_);
 
     builder.AddListeningPort(
         endpoint,
@@ -128,7 +132,8 @@ bool ChunkserverServer::Start() {
 
     builder.RegisterService(&service_);
 
-    server_ = builder.BuildAndStart();
+    server_ =
+        builder.BuildAndStart();
 
     if (!server_) {
         if (requested_ephemeral_port) {
@@ -139,9 +144,8 @@ bool ChunkserverServer::Start() {
     }
 
     /*
-     * The heartbeat client must advertise the actual
-     * chunkserver endpoint, including the dynamically
-     * selected port when port_ was initially zero.
+     * Advertise the actual chunkserver endpoint,
+     * including the dynamically selected port.
      */
     heartbeat_client_.SetServerAddress(
         GetAddress());
@@ -184,10 +188,12 @@ std::uint16_t ChunkserverServer::GetPort() const noexcept {
 }
 
 std::string ChunkserverServer::GetAddress() const {
-    return host_ + ":" + std::to_string(port_);
+    return host_ + ":" +
+           std::to_string(port_);
 }
 
-chunkserver::Chunkserver& ChunkserverServer::GetChunkserver() noexcept {
+chunkserver::Chunkserver&
+ChunkserverServer::GetChunkserver() noexcept {
     return chunkserver_;
 }
 
@@ -205,8 +211,14 @@ void ChunkserverServer::HeartbeatLoop(
                 master_address_,
                 ::gfs::UnixTimeMillis()));
 
+        /*
+         * Phase 17 uses a 500 ms failure timeout.
+         * Heartbeats must therefore be sent substantially
+         * more frequently than that timeout so healthy
+         * chunkservers are not falsely classified as failed.
+         */
         std::this_thread::sleep_for(
-            std::chrono::seconds(1));
+            std::chrono::milliseconds(100));
     }
 }
 

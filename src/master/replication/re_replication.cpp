@@ -6,7 +6,6 @@
 #include <algorithm>
 #include <chrono>
 #include <grpcpp/grpcpp.h>
-#include <limits>
 #include <mutex>
 #include <unordered_set>
 #include <utility>
@@ -413,7 +412,9 @@ bool ReReplicationManager::TransferReplica(
             destination_server_id);
 
     if (!source_endpoint.has_value() ||
-        !destination_endpoint.has_value()) {
+        source_endpoint->empty() ||
+        !destination_endpoint.has_value() ||
+        destination_endpoint->empty()) {
         return false;
     }
 
@@ -491,6 +492,21 @@ bool ReReplicationManager::TransferReplica(
     if (!create_status.ok() ||
         !create_response.success()) {
         return false;
+    }
+
+    /*
+     * An allocated but unwritten GFS chunk is a valid
+     * zero-length chunk. CreateReplica has already
+     * materialized that chunk on the destination, so
+     * there is no WriteChunk RPC to perform when the
+     * source contains no data.
+     *
+     * This is required by Phase 17 recovery: the test
+     * allocates a replicated chunk, stops one replica,
+     * and invokes recovery before any payload is written.
+     */
+    if (transfer_response.data().empty()) {
+        return true;
     }
 
     ::gfs::protocol::WriteChunkRequest

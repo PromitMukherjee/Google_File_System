@@ -2,6 +2,9 @@
 
 #include "gfs/common/utils.hpp"
 
+#include "chunkserver.grpc.pb.h"
+
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <mutex>
@@ -462,11 +465,19 @@ void MasterServiceImpl::SetMaster(
         return ::grpc::Status::OK;
     }
 
+    /*
+     * Placement updates the master's replica metadata. The network
+     * chunkservers still need an actual empty chunk before a client
+     * can issue the first WriteChunk RPC. Create that physical chunk
+     * on every selected replica before reporting successful allocation.
+     */
+    std::vector<std::string> replica_endpoints;
+
+    replica_endpoints.reserve(
+        replicas.size());
+
     for (const ServerId server_id :
          replicas) {
-
-        response->add_replica_server_ids(
-            server_id);
 
         const auto endpoint =
             master_->GetReReplicationManager()
@@ -484,8 +495,79 @@ void MasterServiceImpl::SetMaster(
             return ::grpc::Status::OK;
         }
 
-        response->add_replica_addresses(
+        replica_endpoints.push_back(
             *endpoint);
+    }
+
+    for (std::size_t index = 0;
+         index < replicas.size();
+         ++index) {
+
+        const auto channel =
+            ::grpc::CreateChannel(
+                replica_endpoints[index],
+                ::grpc::InsecureChannelCredentials());
+
+        auto stub =
+            ::gfs::protocol::ChunkserverService::
+                NewStub(channel);
+
+        ::gfs::protocol::CreateReplicaRequest
+            create_request;
+
+        create_request.set_chunk_handle(
+            *handle);
+
+        create_request.set_chunk_version(
+            metadata.has_value()
+                ? metadata->version
+                : 1);
+
+        ::gfs::protocol::CreateReplicaResponse
+            create_response;
+
+        ::grpc::ClientContext context;
+
+        context.set_deadline(
+            std::chrono::system_clock::now() +
+            std::chrono::seconds(5));
+
+        const auto status =
+            stub->CreateReplica(
+                &context,
+                create_request,
+                &create_response);
+
+        if (!status.ok() ||
+            !create_response.success()) {
+
+            for (const ServerId placed_server :
+                 replicas) {
+                static_cast<void>(
+                    master_->RemoveReplica(
+                        *handle,
+                        placed_server));
+            }
+
+            response->set_success(false);
+            response->set_error_message(
+                "Failed to create chunk replica");
+            response->clear_replica_server_ids();
+            response->clear_replica_addresses();
+
+            return ::grpc::Status::OK;
+        }
+    }
+
+    for (std::size_t index = 0;
+         index < replicas.size();
+         ++index) {
+
+        response->add_replica_server_ids(
+            replicas[index]);
+
+        response->add_replica_addresses(
+            replica_endpoints[index]);
     }
 
     response->set_success(true);

@@ -12,6 +12,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <memory>
+#include <optional>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -333,6 +334,7 @@ TEST(
 
     appender.SetAppendFunction(
         [](
+            const FilePath&,
             const ChunkLocation&,
             ChunkHandle,
             ChunkVersion,
@@ -430,6 +432,7 @@ TEST(
 
     appender.SetAppendFunction(
         [&](
+            const FilePath&,
             const ChunkLocation& primary_location,
             ChunkHandle handle,
             ChunkVersion version,
@@ -632,6 +635,7 @@ TEST(
 
     client.SetRecordAppendFunction(
         [&](
+            const FilePath&,
             const ChunkLocation&,
             ChunkHandle handle,
             ChunkVersion version,
@@ -830,6 +834,7 @@ TEST(
 
     appender.SetAppendFunction(
         [&](
+            const FilePath&,
             const ChunkLocation& primary_location,
             ChunkHandle handle,
             ChunkVersion version,
@@ -1003,7 +1008,9 @@ TEST(
         });
 
     appender.SetAppendFunction(
-        [&](const ChunkLocation&,
+        [&](
+            const FilePath&,
+            const ChunkLocation&,
             ChunkHandle handle,
             ChunkVersion version,
             const std::vector<

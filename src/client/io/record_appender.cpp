@@ -123,6 +123,7 @@ bool RecordAppender::Append(
 
         const AppendResult result =
             append_function_(
+                path,
                 *primary_it,
                 entry.handle,
                 chunk->version == 0

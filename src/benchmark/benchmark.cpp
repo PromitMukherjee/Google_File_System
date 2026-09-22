@@ -189,6 +189,7 @@ void ConfigureAppend(
 
     client.SetRecordAppendFunction(
         [&harness](
+            const FilePath&,
             const client::metadata::ChunkLocation&
                 primary_location,
             ChunkHandle handle,
@@ -1501,13 +1502,13 @@ BenchmarkSuite::RunAll(
         [&results](
             std::vector<
                 BenchmarkResult> values) {
-            results.insert(
-                results.end(),
-                std::make_move_iterator(
-                    values.begin()),
-                std::make_move_iterator(
-                    values.end()));
-        };
+        results.insert(
+            results.end(),
+            std::make_move_iterator(
+                values.begin()),
+            std::make_move_iterator(
+                values.end()));
+    };
 
     append(RunRead(config));
     append(RunWrite(config));

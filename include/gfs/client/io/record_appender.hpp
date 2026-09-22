@@ -30,6 +30,7 @@ public:
     };
 
     using AppendFunction = std::function<AppendResult(
+        const FilePath& path,
         const metadata::ChunkLocation& primary,
         ChunkHandle handle,
         ChunkVersion version,

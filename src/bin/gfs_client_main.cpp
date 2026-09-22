@@ -298,11 +298,16 @@ int main(
                     3);
         });
 
-    std::string append_path;
-
+    /*
+     * Record append implementation.
+     *
+     * The current RecordAppender::AppendFunction receives
+     * the file path directly. This avoids the previous
+     * append_path capture bug.
+     */
     client->SetRecordAppendFunction(
-        [master_client,
-         &append_path](
+        [master_client](
+            const gfs::FilePath& append_path,
             const gfs::client::metadata::ChunkLocation&
                 primary,
             gfs::ChunkHandle handle,
@@ -374,6 +379,11 @@ int main(
                     ? file->size - chunk_base
                     : 0;
 
+            /*
+             * The record append cannot fit in the current
+             * chunk. Tell RecordAppender to retry using
+             * the next chunk.
+             */
             if (chunk_offset >
                     gfs::constants::kChunkSize ||
                 data.size() >
@@ -387,7 +397,8 @@ int main(
             }
 
             const auto write_to_replica =
-                [&](const gfs::client::metadata::ChunkLocation&
+                [&](
+                    const gfs::client::metadata::ChunkLocation&
                         location) {
                     if (location.address.empty()) {
                         return false;
@@ -426,6 +437,9 @@ int main(
                            response.success();
                 };
 
+            /*
+             * Write to primary first.
+             */
             if (!write_to_replica(primary)) {
                 return {
                     AppendStatus::Failed,
@@ -434,6 +448,9 @@ int main(
                     0};
             }
 
+            /*
+             * Then write to every secondary replica.
+             */
             for (const auto& replica :
                  replicas) {
                 if (replica.server_id ==

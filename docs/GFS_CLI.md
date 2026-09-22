@@ -2,6 +2,62 @@
 
 ## Start the GFS Client
 
+1. Terminal 1 — Start the Master
+
+Clean the previous CLI test environment:
+
+rm -rf /tmp/gfs-cli-test
+mkdir -p /tmp/gfs-cli-test/master
+
+Start the master:
+
+./build/gfs-master \
+  --host 127.0.0.1 \
+  --port 5000 \
+  --replication 2 \
+  --persistence /tmp/gfs-cli-test/master
+
+Keep this terminal running.
+
+2. Terminal 2 — Start Chunkserver 1
+
+Create its storage directory:
+
+mkdir -p /tmp/gfs-cli-test/chunkserver1
+
+Start chunkserver 1:
+
+./build/gfs-chunkserver \
+  --id 1 \
+  --host 127.0.0.1 \
+  --port 5001 \
+  --master 127.0.0.1:5000 \
+  --storage /tmp/gfs-cli-test/chunkserver1
+
+Keep this terminal running.
+
+3. Terminal 3 — Start Chunkserver 2
+
+Create its storage directory:
+
+mkdir -p /tmp/gfs-cli-test/chunkserver2
+
+Start chunkserver 2:
+
+./build/gfs-chunkserver \
+  --id 2 \
+  --host 127.0.0.1 \
+  --port 5002 \
+  --master 127.0.0.1:5000 \
+  --storage /tmp/gfs-cli-test/chunkserver2
+
+Keep this terminal running.
+
+Wait a few seconds for both chunkservers to register with the master.
+
+4. Terminal 4 — Start the GFS CLI
+
+Start the client:
 ```bash
 ./build/gfs-client --master 127.0.0.1:5000
 ```

@@ -1,3 +1,5 @@
+// FILE: src/protocol/master_service.cpp
+
 #include "gfs/protocol/master_service.hpp"
 
 #include "gfs/common/utils.hpp"
@@ -58,6 +60,139 @@ void MasterServiceImpl::SetMaster(
     if (!success) {
         response->set_error_message(
             "Failed to create file");
+    }
+
+    return ::grpc::Status::OK;
+}
+
+::grpc::Status MasterServiceImpl::CreateDirectory(
+    ::grpc::ServerContext*,
+    const ::gfs::protocol::CreateDirectoryRequest* request,
+    ::gfs::protocol::CreateDirectoryResponse* response) {
+
+    response->Clear();
+
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    if (master_ == nullptr) {
+        response->set_success(false);
+        response->set_error_message(
+            "Master instance is not configured");
+        return ::grpc::Status::OK;
+    }
+
+    if (request == nullptr ||
+        request->path().empty()) {
+        response->set_success(false);
+        response->set_error_message(
+            "Invalid create-directory request");
+        return ::grpc::Status::OK;
+    }
+
+    const bool success =
+        master_->CreateDirectory(
+            request->path());
+
+    response->set_success(success);
+
+    if (!success) {
+        response->set_error_message(
+            "Failed to create directory");
+    }
+
+    return ::grpc::Status::OK;
+}
+
+::grpc::Status MasterServiceImpl::ListDirectory(
+    ::grpc::ServerContext*,
+    const ::gfs::protocol::ListDirectoryRequest* request,
+    ::gfs::protocol::ListDirectoryResponse* response) {
+
+    response->Clear();
+
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    if (master_ == nullptr) {
+        response->set_success(false);
+        response->set_error_message(
+            "Master instance is not configured");
+        return ::grpc::Status::OK;
+    }
+
+    if (request == nullptr ||
+        request->path().empty()) {
+        response->set_success(false);
+        response->set_error_message(
+            "Invalid list-directory request");
+        return ::grpc::Status::OK;
+    }
+
+    if (!master_->DirectoryExists(
+            request->path())) {
+        response->set_success(false);
+        response->set_error_message(
+            "Directory not found");
+        return ::grpc::Status::OK;
+    }
+
+    const auto entries =
+        master_->GetNamespaceManager()
+            .ListDirectory(
+                request->path());
+
+    for (const auto& entry : entries) {
+        auto* output =
+            response->add_entries();
+
+        output->set_path(
+            entry.path);
+
+        output->set_directory(
+            entry.type ==
+            ::gfs::master::namespace_management::
+                NamespaceManager::NodeType::Directory);
+    }
+
+    response->set_success(true);
+
+    return ::grpc::Status::OK;
+}
+
+::grpc::Status MasterServiceImpl::CreateSnapshot(
+    ::grpc::ServerContext*,
+    const ::gfs::protocol::CreateSnapshotRequest* request,
+    ::gfs::protocol::CreateSnapshotResponse* response) {
+
+    response->Clear();
+
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    if (master_ == nullptr) {
+        response->set_success(false);
+        response->set_error_message(
+            "Master instance is not configured");
+        return ::grpc::Status::OK;
+    }
+
+    if (request == nullptr ||
+        request->source_path().empty() ||
+        request->snapshot_path().empty()) {
+        response->set_success(false);
+        response->set_error_message(
+            "Invalid create-snapshot request");
+        return ::grpc::Status::OK;
+    }
+
+    const bool success =
+        master_->CreateSnapshot(
+            request->source_path(),
+            request->snapshot_path());
+
+    response->set_success(success);
+
+    if (!success) {
+        response->set_error_message(
+            "Failed to create snapshot");
     }
 
     return ::grpc::Status::OK;

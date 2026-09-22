@@ -1,4 +1,4 @@
-#include "gfs/client/cli/cli.hpp"
+#include "gfs/client/cli.hpp"
 #include "gfs/client/gfs_client.hpp"
 #include "gfs/client/metadata/chunk_location_cache.hpp"
 #include "gfs/client/metadata/master_client.hpp"

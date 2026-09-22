@@ -1,4 +1,4 @@
-#include "gfs/client/cli/cli.hpp"
+#include "gfs/client/cli.hpp"
 
 #include <gtest/gtest.h>
 

@@ -151,7 +151,7 @@ int main(
                             argc,
                             argv,
                             "--replication",
-                            "3")));
+                            "0")));
 
             return RpcCreateFile(
                        master_address,
@@ -295,7 +295,7 @@ int main(
             return master_client
                 ->CreateFile(
                     file_path,
-                    3);
+                    0);
         });
 
     /*

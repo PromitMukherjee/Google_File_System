@@ -300,7 +300,7 @@ bool CLI::Execute(
             return false;
         }
 
-        std::uint32_t replication = 3;
+        std::uint32_t replication = 0;
 
         if (args.size() == 2) {
             const auto parsed =
@@ -687,11 +687,7 @@ bool CLI::Execute(
         const auto index =
             ParseUnsigned(args[1]);
 
-        if (!index.has_value() ||
-            *index >
-                static_cast<std::uint64_t>(
-                    std::numeric_limits<
-                        ChunkIndex>::max())) {
+        if (!index.has_value()) {
             output
                 << "Error: invalid chunk index\n";
             return false;

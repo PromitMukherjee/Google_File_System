@@ -73,10 +73,39 @@ bool Master::CreateFile(
         return false;
     }
 
-    const std::uint32_t factor =
-        replication_factor == 0
-            ? 3
-            : replication_factor;
+    /*
+     * replication_factor == 0 means:
+     * use the configured placement-policy default,
+     * constrained by the currently live chunkservers.
+     *
+     * Explicit replication factors are preserved and
+     * are rejected if the current live cluster cannot
+     * satisfy them.
+     */
+    const auto live_servers =
+        heartbeat_manager_.GetLiveServers();
+
+    std::uint32_t factor =
+        replication_factor;
+
+    if (factor == 0) {
+        if (!live_servers.empty()) {
+            factor = static_cast<std::uint32_t>(
+                std::min<std::size_t>(
+                    placement_policy_.GetReplicationFactor(),
+                    live_servers.size()));
+        } else {
+            factor = static_cast<std::uint32_t>(
+                placement_policy_.GetReplicationFactor());
+        }
+    } else if (!live_servers.empty() &&
+               factor > live_servers.size()) {
+        return false;
+    }
+
+    if (factor == 0) {
+        return false;
+    }
 
     if (!AppendOperation(
             recovery::OperationType::CreateFile,
@@ -588,29 +617,6 @@ Master::PrepareCopyOnWrite(
         return std::nullopt;
     }
 
-    /*
-     * IMPORTANT:
-     *
-     * Do not use AddChunkToFile() followed by
-     * RemoveChunkFromFile() here.
-     *
-     * COW must replace the exact chunk slot.
-     *
-     * Example:
-     *
-     *   [chunk0, chunk1, chunk2]
-     *
-     * COW on chunk1 must produce:
-     *
-     *   [chunk0, new_chunk, chunk2]
-     *
-     * and never:
-     *
-     *   [chunk0, chunk2, new_chunk]
-     *
-     * This is required for multiple independent
-     * shared chunks and preserves chunk indexes.
-     */
     if (!metadata_.ReplaceChunkInFile(
             path,
             chunk_index,
@@ -634,10 +640,6 @@ Master::PrepareCopyOnWrite(
              std::to_string(destination_handle),
              std::to_string(source_chunk->version),
              std::to_string(source_chunk->size)})) {
-        /*
-         * Restore the original chunk at the exact
-         * same index if persistence fails.
-         */
         static_cast<void>(
             metadata_.ReplaceChunkInFile(
                 path,
@@ -1967,4 +1969,4 @@ Master::GetRebalancer() const noexcept {
     return rebalancer_;
 }
 
-}// namespace gfs::master
+} // namespace gfs::master

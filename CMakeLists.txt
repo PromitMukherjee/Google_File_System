@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(Google_File_System
+project(
+    Google_File_System
     VERSION 1.0
     LANGUAGES CXX
 )
@@ -196,15 +197,10 @@ foreach(PROTO_FILE ${PROTO_FILES})
 
         COMMAND
             ${PROTOC_EXECUTABLE}
-
             --proto_path=${CMAKE_CURRENT_SOURCE_DIR}/proto
-
             --cpp_out=${GENERATED_DIR}
-
             --grpc_out=${GENERATED_DIR}
-
             --plugin=protoc-gen-grpc=${GRPC_PLUGIN_EXECUTABLE}
-
             ${PROTO_FILE}
 
         DEPENDS
@@ -216,7 +212,6 @@ foreach(PROTO_FILE ${PROTO_FILES})
     list(
         APPEND
         PROTO_GENERATED_SOURCES
-
         ${PB_CC}
         ${GRPC_CC}
     )
@@ -224,7 +219,6 @@ foreach(PROTO_FILE ${PROTO_FILES})
     list(
         APPEND
         PROTO_GENERATED_HEADERS
-
         ${PB_H}
         ${GRPC_H}
     )
@@ -244,14 +238,12 @@ add_library(
 target_include_directories(
     gfs_protocol
     PUBLIC
-
         ${GENERATED_DIR}
 )
 
 target_link_libraries(
     gfs_protocol
     PUBLIC
-
         protobuf::libprotobuf
 )
 
@@ -260,9 +252,7 @@ if(TARGET gRPC::grpc++)
     target_link_libraries(
         gfs_protocol
         PUBLIC
-
             gRPC::grpc++
-
     )
 
 else()
@@ -270,9 +260,7 @@ else()
     target_link_libraries(
         gfs_protocol
         PUBLIC
-
             gfs_grpc
-
     )
 
 endif()
@@ -280,7 +268,6 @@ endif()
 target_compile_features(
     gfs_protocol
     PUBLIC
-
         cxx_std_20
 )
 
@@ -462,6 +449,12 @@ add_library(
     src/client/gfs_client.cpp
 
     # --------------------------------------------------------
+    # PHASE 18 — CLI
+    # --------------------------------------------------------
+
+    src/client/cli/cli.cpp
+
+    # --------------------------------------------------------
     # PHASE 16 — BENCHMARKING
     # --------------------------------------------------------
 
@@ -475,7 +468,6 @@ add_library(
 target_include_directories(
     gfs_core
     PUBLIC
-
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${GENERATED_DIR}
 )
@@ -487,14 +479,12 @@ target_include_directories(
 target_link_libraries(
     gfs_core
     PUBLIC
-
         gfs_protocol
 )
 
 target_compile_features(
     gfs_core
     PUBLIC
-
         cxx_std_20
 )
 
@@ -507,7 +497,6 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     target_compile_options(
         gfs_core
         PRIVATE
-
             -Wall
             -Wextra
             -Wpedantic
@@ -523,21 +512,18 @@ endif()
 
 add_executable(
     gfs
-
     src/main.cpp
 )
 
 target_link_libraries(
     gfs
     PRIVATE
-
         gfs_core
 )
 
 target_include_directories(
     gfs
     PRIVATE
-
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${GENERATED_DIR}
 )
@@ -554,14 +540,12 @@ enable_testing()
 
 add_executable(
     gfs_common_test
-
     tests/common_test.cpp
 )
 
 target_link_libraries(
     gfs_common_test
     PRIVATE
-
         gfs_core
         GTest::gtest_main
 )
@@ -572,14 +556,12 @@ target_link_libraries(
 
 add_executable(
     gfs_master_test
-
     tests/master_test.cpp
 )
 
 target_link_libraries(
     gfs_master_test
     PRIVATE
-
         gfs_core
         GTest::gtest_main
 )
@@ -590,14 +572,12 @@ target_link_libraries(
 
 add_executable(
     gfs_chunkserver_test
-
     tests/chunkserver_test.cpp
 )
 
 target_link_libraries(
     gfs_chunkserver_test
     PRIVATE
-
         gfs_core
         GTest::gtest_main
 )
@@ -608,14 +588,12 @@ target_link_libraries(
 
 add_executable(
     gfs_client_test
-
     tests/client_test.cpp
 )
 
 target_link_libraries(
     gfs_client_test
     PRIVATE
-
         gfs_core
         GTest::gtest_main
 )
@@ -626,14 +604,12 @@ target_link_libraries(
 
 add_executable(
     gfs_replication_test
-
     tests/replication_test.cpp
 )
 
 target_link_libraries(
     gfs_replication_test
     PRIVATE
-
         gfs_core
         GTest::gtest_main
 )
@@ -644,14 +620,12 @@ target_link_libraries(
 
 add_executable(
     gfs_phase7_test
-
     tests/phase7_test.cpp
 )
 
 target_link_libraries(
     gfs_phase7_test
     PRIVATE
-
         gfs_core
         GTest::gtest_main
 )
@@ -662,14 +636,12 @@ target_link_libraries(
 
 add_executable(
     gfs_phase8_test
-
     tests/phase8_test.cpp
 )
 
 target_link_libraries(
     gfs_phase8_test
     PRIVATE
-
         gfs_core
         GTest::gtest_main
 )
@@ -680,14 +652,12 @@ target_link_libraries(
 
 add_executable(
     gfs_phase9_test
-
     tests/phase9_test.cpp
 )
 
 target_link_libraries(
     gfs_phase9_test
     PRIVATE
-
         gfs_core
         GTest::gtest_main
 )
@@ -698,14 +668,12 @@ target_link_libraries(
 
 add_executable(
     gfs_phase10_test
-
     tests/phase10_test.cpp
 )
 
 target_link_libraries(
     gfs_phase10_test
     PRIVATE
-
         gfs_core
         GTest::gtest_main
 )
@@ -716,14 +684,12 @@ target_link_libraries(
 
 add_executable(
     gfs_phase11_test
-
     tests/phase11_test.cpp
 )
 
 target_link_libraries(
     gfs_phase11_test
     PRIVATE
-
         gfs_core
         GTest::gtest_main
 )
@@ -734,14 +700,12 @@ target_link_libraries(
 
 add_executable(
     gfs_phase12_test
-
     tests/phase12_test.cpp
 )
 
 target_link_libraries(
     gfs_phase12_test
     PRIVATE
-
         gfs_core
         GTest::gtest_main
 )
@@ -752,14 +716,12 @@ target_link_libraries(
 
 add_executable(
     gfs_phase13_test
-
     tests/phase13_test.cpp
 )
 
 target_link_libraries(
     gfs_phase13_test
     PRIVATE
-
         gfs_core
         GTest::gtest_main
 )
@@ -770,14 +732,12 @@ target_link_libraries(
 
 add_executable(
     gfs_phase14_test
-
     tests/phase14_test.cpp
 )
 
 target_link_libraries(
     gfs_phase14_test
     PRIVATE
-
         gfs_core
         GTest::gtest_main
 )
@@ -788,14 +748,12 @@ target_link_libraries(
 
 add_executable(
     gfs_phase15_test
-
     tests/phase15_test.cpp
 )
 
 target_link_libraries(
     gfs_phase15_test
     PRIVATE
-
         gfs_core
         GTest::gtest_main
 )
@@ -806,14 +764,12 @@ target_link_libraries(
 
 add_executable(
     gfs_phase16_test
-
     tests/phase16_test.cpp
 )
 
 target_link_libraries(
     gfs_phase16_test
     PRIVATE
-
         gfs_core
         GTest::gtest_main
 )
@@ -824,40 +780,38 @@ target_link_libraries(
 
 add_executable(
     gfs-master
-
     src/bin/gfs_master_main.cpp
 )
 
 target_link_libraries(
     gfs-master
     PRIVATE
-
         gfs_core
 )
 
 add_executable(
     gfs-chunkserver
-
     src/bin/gfs_chunkserver_main.cpp
 )
 
 target_link_libraries(
     gfs-chunkserver
     PRIVATE
-
         gfs_core
 )
 
+# ============================================================
+# PHASE 18 — GFS CLI EXECUTABLE
+# ============================================================
+
 add_executable(
     gfs-client
-
     src/bin/gfs_client_main.cpp
 )
 
 target_link_libraries(
     gfs-client
     PRIVATE
-
         gfs_core
 )
 
@@ -872,7 +826,6 @@ foreach(
     target_include_directories(
         ${NETWORK_TARGET}
         PRIVATE
-
             ${CMAKE_CURRENT_SOURCE_DIR}/include
             ${GENERATED_DIR}
     )
@@ -882,7 +835,6 @@ foreach(
         target_compile_options(
             ${NETWORK_TARGET}
             PRIVATE
-
                 -Wall
                 -Wextra
                 -Wpedantic
@@ -895,19 +847,33 @@ foreach(
 endforeach()
 
 # ============================================================
-# PHASE 17 TEST
+# PHASE 17 NETWORK TEST
 # ============================================================
 
 add_executable(
     gfs_phase17_test
-
     tests/phase17_test.cpp
 )
 
 target_link_libraries(
     gfs_phase17_test
     PRIVATE
+        gfs_core
+        GTest::gtest_main
+)
 
+# ============================================================
+# PHASE 18 CLI TEST
+# ============================================================
+
+add_executable(
+    gfs_phase18_test
+    tests/phase18_test.cpp
+)
+
+target_link_libraries(
+    gfs_phase18_test
+    PRIVATE
         gfs_core
         GTest::gtest_main
 )
@@ -918,21 +884,18 @@ target_link_libraries(
 
 add_executable(
     gfs_benchmark
-
     src/benchmark/main.cpp
 )
 
 target_link_libraries(
     gfs_benchmark
     PRIVATE
-
         gfs_core
 )
 
 target_include_directories(
     gfs_benchmark
     PRIVATE
-
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${GENERATED_DIR}
 )
@@ -942,7 +905,6 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     target_compile_options(
         gfs_benchmark
         PRIVATE
-
             -Wall
             -Wextra
             -Wpedantic
@@ -975,12 +937,12 @@ foreach(
         gfs_phase15_test
         gfs_phase16_test
         gfs_phase17_test
+        gfs_phase18_test
 )
 
     target_include_directories(
         ${TEST_TARGET}
         PRIVATE
-
             ${CMAKE_CURRENT_SOURCE_DIR}/include
             ${GENERATED_DIR}
     )
@@ -990,7 +952,6 @@ foreach(
         target_compile_options(
             ${TEST_TARGET}
             PRIVATE
-
                 -Wall
                 -Wextra
                 -Wpedantic

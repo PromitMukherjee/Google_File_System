@@ -71,6 +71,40 @@ message GetFileInfoResponse {
     FileMetadata metadata = 3;
 }
 
+message CreateDirectoryRequest {
+    string path = 1;
+}
+
+message CreateDirectoryResponse {
+    bool success = 1;
+    string error_message = 2;
+}
+
+message DirectoryEntry {
+    string path = 1;
+    bool directory = 2;
+}
+
+message ListDirectoryRequest {
+    string path = 1;
+}
+
+message ListDirectoryResponse {
+    bool success = 1;
+    string error_message = 2;
+    repeated DirectoryEntry entries = 3;
+}
+
+message CreateSnapshotRequest {
+    string source_path = 1;
+    string snapshot_path = 2;
+}
+
+message CreateSnapshotResponse {
+    bool success = 1;
+    string error_message = 2;
+}
+
 message GetChunkLocationsRequest {
     string path = 1;
     uint64 chunk_index = 2;
@@ -153,17 +187,34 @@ message HeartbeatResponse {
 
 service MasterService {
     rpc CreateFile(CreateFileRequest) returns (CreateFileResponse);
+
+    rpc CreateDirectory(CreateDirectoryRequest)
+        returns (CreateDirectoryResponse);
+
+    rpc ListDirectory(ListDirectoryRequest)
+        returns (ListDirectoryResponse);
+
+    rpc CreateSnapshot(CreateSnapshotRequest)
+        returns (CreateSnapshotResponse);
+
     rpc DeleteFile(DeleteFileRequest) returns (DeleteFileResponse);
+
     rpc RenameFile(RenameFileRequest) returns (RenameFileResponse);
+
     rpc GetFileInfo(GetFileInfoRequest) returns (GetFileInfoResponse);
+
     rpc GetChunkLocations(GetChunkLocationsRequest)
         returns (GetChunkLocationsResponse);
+
     rpc GetLeaseHolder(GetLeaseHolderRequest)
         returns (GetLeaseHolderResponse);
+
     rpc AllocateChunk(AllocateChunkRequest)
         returns (AllocateChunkResponse);
+
     rpc UpdateFileSize(UpdateFileSizeRequest)
         returns (UpdateFileSizeResponse);
+
     rpc Heartbeat(HeartbeatRequest)
         returns (HeartbeatResponse);
 }

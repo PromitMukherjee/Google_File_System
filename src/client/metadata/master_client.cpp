@@ -146,10 +146,26 @@ MasterClient::LookupFile(
     result.size =
         response.metadata().size();
 
+    result.replication_factor =
+        response.metadata()
+            .replication_factor();
+
     result.chunk_count =
         static_cast<std::size_t>(
             response.metadata()
                 .chunk_handles_size());
+
+    result.chunk_handles.reserve(
+        static_cast<std::size_t>(
+            response.metadata()
+                .chunk_handles_size()));
+
+    for (const auto handle :
+         response.metadata()
+             .chunk_handles()) {
+        result.chunk_handles.push_back(
+            handle);
+    }
 
     return result;
 }
@@ -389,6 +405,212 @@ bool MasterClient::CreateFile(
 
     const auto status =
         stub->CreateFile(
+            &context,
+            request,
+            &response);
+
+    return status.ok() &&
+           response.success();
+}
+
+bool MasterClient::CreateDirectory(
+    const FilePath& path) const {
+    if (path.empty()) {
+        return false;
+    }
+
+    auto stub =
+        MakeStub(master_address_);
+
+    if (!stub) {
+        return false;
+    }
+
+    ::gfs::protocol::CreateDirectoryRequest
+        request;
+
+    request.set_path(path);
+
+    ::gfs::protocol::CreateDirectoryResponse
+        response;
+
+    ::grpc::ClientContext context;
+
+    SetDeadline(context);
+
+    const auto status =
+        stub->CreateDirectory(
+            &context,
+            request,
+            &response);
+
+    return status.ok() &&
+           response.success();
+}
+
+std::vector<DirectoryEntry>
+MasterClient::ListDirectory(
+    const FilePath& path) const {
+    if (path.empty()) {
+        return {};
+    }
+
+    auto stub =
+        MakeStub(master_address_);
+
+    if (!stub) {
+        return {};
+    }
+
+    ::gfs::protocol::ListDirectoryRequest
+        request;
+
+    request.set_path(path);
+
+    ::gfs::protocol::ListDirectoryResponse
+        response;
+
+    ::grpc::ClientContext context;
+
+    SetDeadline(context);
+
+    const auto status =
+        stub->ListDirectory(
+            &context,
+            request,
+            &response);
+
+    if (!status.ok() ||
+        !response.success()) {
+        return {};
+    }
+
+    std::vector<DirectoryEntry> result;
+
+    result.reserve(
+        static_cast<std::size_t>(
+            response.entries_size()));
+
+    for (const auto& entry :
+         response.entries()) {
+        result.push_back(
+            DirectoryEntry{
+                entry.path(),
+                entry.directory()});
+    }
+
+    return result;
+}
+
+bool MasterClient::DeleteFile(
+    const FilePath& path) const {
+    if (path.empty()) {
+        return false;
+    }
+
+    auto stub =
+        MakeStub(master_address_);
+
+    if (!stub) {
+        return false;
+    }
+
+    ::gfs::protocol::DeleteFileRequest
+        request;
+
+    request.set_path(path);
+
+    ::gfs::protocol::DeleteFileResponse
+        response;
+
+    ::grpc::ClientContext context;
+
+    SetDeadline(context);
+
+    const auto status =
+        stub->DeleteFile(
+            &context,
+            request,
+            &response);
+
+    return status.ok() &&
+           response.success();
+}
+
+bool MasterClient::RenameFile(
+    const FilePath& source_path,
+    const FilePath& destination_path) const {
+    if (source_path.empty() ||
+        destination_path.empty()) {
+        return false;
+    }
+
+    auto stub =
+        MakeStub(master_address_);
+
+    if (!stub) {
+        return false;
+    }
+
+    ::gfs::protocol::RenameFileRequest
+        request;
+
+    request.set_source_path(
+        source_path);
+
+    request.set_destination_path(
+        destination_path);
+
+    ::gfs::protocol::RenameFileResponse
+        response;
+
+    ::grpc::ClientContext context;
+
+    SetDeadline(context);
+
+    const auto status =
+        stub->RenameFile(
+            &context,
+            request,
+            &response);
+
+    return status.ok() &&
+           response.success();
+}
+
+bool MasterClient::CreateSnapshot(
+    const FilePath& source_path,
+    const FilePath& snapshot_path) const {
+    if (source_path.empty() ||
+        snapshot_path.empty()) {
+        return false;
+    }
+
+    auto stub =
+        MakeStub(master_address_);
+
+    if (!stub) {
+        return false;
+    }
+
+    ::gfs::protocol::CreateSnapshotRequest
+        request;
+
+    request.set_source_path(
+        source_path);
+
+    request.set_snapshot_path(
+        snapshot_path);
+
+    ::gfs::protocol::CreateSnapshotResponse
+        response;
+
+    ::grpc::ClientContext context;
+
+    SetDeadline(context);
+
+    const auto status =
+        stub->CreateSnapshot(
             &context,
             request,
             &response);

@@ -28,6 +28,24 @@ public:
         ::gfs::protocol::CreateFileResponse* response
     ) override;
 
+    ::grpc::Status CreateDirectory(
+        ::grpc::ServerContext* context,
+        const ::gfs::protocol::CreateDirectoryRequest* request,
+        ::gfs::protocol::CreateDirectoryResponse* response
+    ) override;
+
+    ::grpc::Status ListDirectory(
+        ::grpc::ServerContext* context,
+        const ::gfs::protocol::ListDirectoryRequest* request,
+        ::gfs::protocol::ListDirectoryResponse* response
+    ) override;
+
+    ::grpc::Status CreateSnapshot(
+        ::grpc::ServerContext* context,
+        const ::gfs::protocol::CreateSnapshotRequest* request,
+        ::gfs::protocol::CreateSnapshotResponse* response
+    ) override;
+
     ::grpc::Status DeleteFile(
         ::grpc::ServerContext* context,
         const ::gfs::protocol::DeleteFileRequest* request,

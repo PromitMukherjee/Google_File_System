@@ -11,6 +11,15 @@
 
 namespace gfs::client::metadata {
 
+struct DirectoryEntry {
+    std::string path;
+    bool directory = false;
+
+    friend bool operator==(
+        const DirectoryEntry& lhs,
+        const DirectoryEntry& rhs) = default;
+};
+
 struct ChunkLocation {
     ServerId server_id = 0;
     std::string address;
@@ -31,6 +40,8 @@ struct FileMetadata {
     FilePath path;
     std::uint64_t size = 0;
     std::size_t chunk_count = 0;
+    std::uint32_t replication_factor = 3;
+    std::vector<ChunkHandle> chunk_handles;
 };
 
 class MasterClient {
@@ -120,6 +131,28 @@ public:
     CreateFile(
         const FilePath& path,
         std::uint32_t replication_factor = 0) const;
+
+    [[nodiscard]] bool
+    CreateDirectory(
+        const FilePath& path) const;
+
+    [[nodiscard]] std::vector<DirectoryEntry>
+    ListDirectory(
+        const FilePath& path) const;
+
+    [[nodiscard]] bool
+    DeleteFile(
+        const FilePath& path) const;
+
+    [[nodiscard]] bool
+    RenameFile(
+        const FilePath& source_path,
+        const FilePath& destination_path) const;
+
+    [[nodiscard]] bool
+    CreateSnapshot(
+        const FilePath& source_path,
+        const FilePath& snapshot_path) const;
 
     [[nodiscard]] bool
     UpdateFileSize(
